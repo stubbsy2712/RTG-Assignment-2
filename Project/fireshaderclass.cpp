@@ -379,11 +379,9 @@ void FireShaderClass::OutputShaderErrorMessage(ID3D10Blob* errorMessage, HWND hw
 
 
 bool FireShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix,
-	const XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* fireTexture,
-										  ID3D11ShaderResourceView* noiseTexture, ID3D11ShaderResourceView* alphaTexture, 
-										  float frameTime, XMFLOAT3 scrollSpeeds, XMFLOAT3 scales, XMFLOAT2 distortion1,
-	XMFLOAT2 distortion2, XMFLOAT2 distortion3, float distortionScale,
-										  float distortionBias)
+	const XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* fireTexture, ID3D11ShaderResourceView* noiseTexture,
+	ID3D11ShaderResourceView* alphaTexture,  float frameTime, XMFLOAT3 scrollSpeeds, XMFLOAT3 scales, XMFLOAT2 distortion1,
+	XMFLOAT2 distortion2, XMFLOAT2 distortion3, float distortionScale, float distortionBias)
 {
 	HRESULT result;
     D3D11_MAPPED_SUBRESOURCE mappedResource;

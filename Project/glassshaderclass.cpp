@@ -2,6 +2,9 @@
 // Filename: glassshaderclass.cpp
 ////////////////////////////////////////////////////////////////////////////////
 #include "glassshaderclass.h"
+#include <d3dcompiler.h>
+
+using namespace DirectX;
 
 GlassShaderClass::GlassShaderClass()
 {
@@ -28,7 +31,7 @@ bool GlassShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../Engine/glass.vs", L"../Engine/glass.ps");
+	result = InitializeShader(device, hwnd, L"../Project/glass.vs", L"../Project/glass.ps");
 	if (!result)
 	{
 		return false;
@@ -70,9 +73,12 @@ bool GlassShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount
 bool GlassShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT result;
-	ID3D10Blob* errorMessage;
-	ID3D10Blob* vertexShaderBuffer;
-	ID3D10Blob* pixelShaderBuffer;
+	//ID3D10Blob* errorMessage;
+	//ID3D10Blob* vertexShaderBuffer;
+	//ID3D10Blob* pixelShaderBuffer;
+	ID3DBlob* errorMessage;
+	ID3DBlob* vertexShaderBuffer;
+	ID3DBlob* pixelShaderBuffer;
 	D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
 	unsigned int numElements;
 	D3D11_SAMPLER_DESC samplerDesc;
@@ -85,8 +91,12 @@ bool GlassShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
 	// Compile the vertex shader code.
-	result = D3DX11CompileFromFile(vsFilename, NULL, NULL, "GlassVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
-		&vertexShaderBuffer, &errorMessage, NULL);
+
+	//result = D3DX11CompileFromFile(vsFilename, NULL, NULL, "GlassVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
+	//	&vertexShaderBuffer, &errorMessage, NULL);
+
+	result = D3DCompileFromFile(vsFilename, NULL, NULL, "GlassVertexShader", "vs_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		&vertexShaderBuffer, &errorMessage);
 	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.
@@ -103,8 +113,13 @@ bool GlassShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* 
 		return false;
 	}
 	// Compile the pixel shader code.
-	result = D3DX11CompileFromFile(psFilename, NULL, NULL, "GlassPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
-		&pixelShaderBuffer, &errorMessage, NULL);
+
+	//result = D3DX11CompileFromFile(psFilename, NULL, NULL, "GlassPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0, NULL,
+	//	&pixelShaderBuffer, &errorMessage, NULL);
+
+	result = D3DCompileFromFile(psFilename, NULL, NULL, "GlassPixelShader", "ps_5_0", D3D10_SHADER_ENABLE_STRICTNESS, 0,
+		&pixelShaderBuffer, &errorMessage);
+
 	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.

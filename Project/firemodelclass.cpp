@@ -318,6 +318,8 @@ bool FireModelClass::LoadModel(char* filename)
 
 	// Open the model file.  If it could not open the file then exit.
 	fin.open(filename);
+
+	// If it could not open the file then exit.
 	if(fin.fail())
 	{
 		return false;

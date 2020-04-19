@@ -100,10 +100,11 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
+      <ConformanceMode>false</ConformanceMode>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -143,6 +144,7 @@
     <ClInclude Include="applicationclass.h" />
     <ClInclude Include="BaseModelClass.h" />
     <ClInclude Include="bitmapclass.h" />
+    <ClInclude Include="bubblemodelclass.h" />
     <ClInclude Include="bubbleshaderclass.h" />
     <ClInclude Include="cameraclass.h" />
     <ClInclude Include="colorshaderclass.h" />
@@ -160,9 +162,11 @@
     <ClInclude Include="lightshaderclass.h" />
     <ClInclude Include="minimapclass.h" />
     <ClInclude Include="positionclass.h" />
+    <ClInclude Include="rendertextureclass.h" />
     <ClInclude Include="shadermanagerclass.h" />
     <ClInclude Include="skydomeclass.h" />
     <ClInclude Include="skydomeshaderclass.h" />
+    <ClInclude Include="Soundclass.h" />
     <ClInclude Include="systemclass.h" />
     <ClInclude Include="terraincellclass.h" />
     <ClInclude Include="terrainclass.h" />
@@ -173,12 +177,14 @@
     <ClInclude Include="textureshaderclass.h" />
     <ClInclude Include="timerclass.h" />
     <ClInclude Include="userinterfaceclass.h" />
+    <ClInclude Include="WindowModelClass.h" />
     <ClInclude Include="zoneclass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="applicationclass.cpp" />
     <ClCompile Include="BaseModelClass.cpp" />
     <ClCompile Include="bitmapclass.cpp" />
+    <ClCompile Include="BubbleModelClass.cpp" />
     <ClCompile Include="bubbleshaderclass.cpp" />
     <ClCompile Include="cameraclass.cpp" />
     <ClCompile Include="colorshaderclass.cpp" />
@@ -197,9 +203,11 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="minimapclass.cpp" />
     <ClCompile Include="positionclass.cpp" />
+    <ClCompile Include="rendertextureclass.cpp" />
     <ClCompile Include="shadermanagerclass.cpp" />
     <ClCompile Include="skydomeclass.cpp" />
     <ClCompile Include="skydomeshaderclass.cpp" />
+    <ClCompile Include="Soundclass.cpp" />
     <ClCompile Include="systemclass.cpp" />
     <ClCompile Include="terraincellclass.cpp" />
     <ClCompile Include="terrainclass.cpp" />
@@ -210,6 +218,7 @@
     <ClCompile Include="textureshaderclass.cpp" />
     <ClCompile Include="timerclass.cpp" />
     <ClCompile Include="userinterfaceclass.cpp" />
+    <ClCompile Include="WindowModelClass.cpp" />
     <ClCompile Include="zoneclass.cpp" />
   </ItemGroup>
   <ItemGroup>

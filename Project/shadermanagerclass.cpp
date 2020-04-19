@@ -13,6 +13,7 @@ ShaderManagerClass::ShaderManagerClass()
 	m_SkyDomeShader = 0;
 	m_TerrainShader = 0;
 	m_FireShader = 0;
+	m_GlassShader = 0;
 }
 
 
@@ -108,11 +109,20 @@ bool ShaderManagerClass::Initialize(ID3D11Device* device, HWND hwnd)
 		return false;
 	}
 
-	// Initialize the bump map shader object.
+	// Initialize the fire shader object.
 	result = m_FireShader->Initialize(device, hwnd);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the Fire shader object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_GlassShader = new GlassShaderClass;
+	// Initialize the glass shader object.
+	result = m_GlassShader->Initialize(device, hwnd);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the Glass shader object.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -191,7 +201,12 @@ void ShaderManagerClass::Shutdown()
 		delete m_ColorShader;
 		m_ColorShader = 0;
 	}
-
+	if (m_GlassShader)
+	{
+		m_GlassShader->Shutdown();
+		delete m_GlassShader;
+		m_GlassShader = 0;
+	}
 	return;
 }
 
@@ -238,22 +253,17 @@ bool ShaderManagerClass::RenderFireShader(ID3D11DeviceContext* deviceContext, in
 	XMFLOAT3 scrollSpeeds, XMFLOAT3 scales, XMFLOAT2 distortion1, XMFLOAT2 distortion2,
 	XMFLOAT2 distortion3, float distortionScale, float distortionBias)
 {
-	//bool result;
-
-
 	// Render the model using the fire shader.
-
 	return m_FireShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, fireTexture, noiseTexture, alphaTexture, frameTime, scrollSpeeds, scales, distortion1, distortion2,
 		distortion3, distortionScale, distortionBias);
-	//result = m_FireShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, fireTexture, noiseTexture, alphaTexture, frameTime, scrollSpeeds, scales, distortion1, distortion2,
-	//	distortion3, distortionScale, distortionBias);
+}
 
-	//if (!result)
-	//{
-	//	return false;
-	//}
-
-	//return true;
+bool ShaderManagerClass::RenderGlassShader(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* colorTexture,
+	ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* refractionTexture,
+	float refractionScale)
+{
+	return m_GlassShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, colorTexture, normalTexture, refractionTexture, refractionScale);
 }
 
 bool ShaderManagerClass::RenderTerrainShader(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix,

@@ -13,7 +13,9 @@ ZoneClass::ZoneClass()
 	m_Frustum = 0;
 	m_SkyDome = 0;
 	m_Terrain = 0;
-	m_centreSkull = 0;
+	m_CentreSkull = 0;
+	m_WindowPane = 0;
+	m_RenderTexture = 0;
 }
 
 
@@ -31,6 +33,19 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 {
 	bool result;
 
+	// Create the render to texture object.
+	m_RenderTexture = new RenderTextureClass;
+	if (!m_RenderTexture)
+	{
+		return false;
+	}
+
+	// Initialize the render to texture object.
+	result = m_RenderTexture->Initialize(Direct3D->GetDevice(), screenWidth, screenHeight);
+	if (!result)
+	{
+		return false;
+	}
 
 	// Create the user interface object.
 	m_UserInterface = new UserInterfaceClass;
@@ -92,14 +107,15 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 	m_Frustum->Initialize(screenDepth);
 
 	// Create the centre skull object.
-	m_centreSkull = new FireModelClass;
-	if (!m_centreSkull)
+	m_CentreSkull = new FireModelClass;
+	if (!m_CentreSkull)
 	{
 		return false;
 	}
+	m_CentreSkull->position = XMFLOAT3(800, 10, 600);
 
 	// Initialize the frustum object.
-	result = m_centreSkull->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/new-ninjaHead.txt",
+	result = m_CentreSkull->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/new-ninjaHead.txt",
 		"../Project/data/textures/fire01.dds", "../Project/data/textures/noise01.dds", "../Project/data/textures/alpha01.dds");
 
 	if (!result)
@@ -123,7 +139,7 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		return false;
 	}
 
-	// Create the terrain object.
+	// Create the terrain object.f
 	m_Terrain = new TerrainClass;
 	if(!m_Terrain)
 	{
@@ -135,6 +151,19 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the terrain object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_WindowPane = new WindowModelClass;
+	if (!m_WindowPane)
+	{
+		return false;
+	}
+	result = m_WindowPane->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/cube.txt",
+		"../Project/data/textures/glass01.dds", "../Project/data/textures/bump03.dds", "../Project/data/textures/bump03.dds");
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the glass object.", L"Error", MB_OK);
 		return false;
 	}
 	
@@ -208,16 +237,66 @@ void ZoneClass::Shutdown()
 		m_UserInterface = 0;
 	}
 
-	if (m_centreSkull)
+	if (m_CentreSkull)
 	{
-		m_centreSkull->Shutdown();
-		delete m_centreSkull;
-		m_centreSkull = 0;
+		m_CentreSkull->Shutdown();
+		delete m_CentreSkull;
+		m_CentreSkull = 0;
 	}
-
+	if (m_WindowPane)
+	{
+		m_WindowPane->Shutdown();
+		delete m_WindowPane;
+		m_WindowPane = 0;
+	}
+	// Release the render to texture object.
+	if (m_RenderTexture)
+	{
+		m_RenderTexture->Shutdown();
+		delete m_RenderTexture;
+		m_RenderTexture = 0;
+	}
 	return;
 }
 
+//bool ZoneClass::RenderToTexture(float rotation)
+//{
+//	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+//	bool result;
+//
+//
+//	// Set the render target to be the render to texture.
+//	m_RenderTexture->SetRenderTarget(Direct3D->GetDeviceContext(), Direct3D->GetDepthStencilView());
+//
+//	// Clear the render to texture.
+//	m_RenderTexture->ClearRenderTarget(Direct3D->GetDeviceContext(), Direct3D->GetDepthStencilView(), 0.0f, 0.0f, 0.0f, 1.0f);
+//
+//	// Generate the view matrix based on the camera's position.
+//	m_Camera->Render();
+//
+//	// Get the world, view, and projection matrices from the camera and d3d objects.
+//	Direct3D->GetWorldMatrix(worldMatrix);
+//	m_Camera->GetViewMatrix(viewMatrix);
+//	Direct3D->GetProjectionMatrix(projectionMatrix);
+//
+//	// Multiply the world matrix by the rotation.
+//	D3DXMatrixRotationY(&worldMatrix, rotation);
+//
+//	// Put the cube model vertex and index buffers on the graphics pipeline to prepare them for drawing.
+//	m_Model->Render(Direct3D->GetDeviceContext());
+//
+//	// Render the cube model using the texture shader.
+//	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_Model->GetTexture());
+//	if (!result)
+//	{
+//		return false;
+//	}
+//
+//	// Reset the render target back to the original back buffer and not the render to texture anymore.
+//	m_D3D->SetBackBufferRenderTarget();
+//
+//	return true;
+//}
 
 bool ZoneClass::Frame(D3DClass* Direct3D, InputClass* Input, ShaderManagerClass* ShaderManager, TextureManagerClass* TextureManager, 
 					  float frameTime, int fps)
@@ -360,7 +439,7 @@ void ZoneClass::HandleMovementInput(InputClass* Input, float frameTime)
 
 bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, TextureManagerClass* TextureManager)
 {
-	XMMATRIX worldMatrix, viewMatrix, projectionMatrix, baseViewMatrix, orthoMatrix;
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix, baseViewMatrix, orthoMatrix, translationMatrix;
 	bool result;
 	XMFLOAT3 cameraPosition;
 	int i;
@@ -429,19 +508,6 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 		return false;
 	}
 
-	// Reset the world matrix.
-	Direct3D->GetWorldMatrix(worldMatrix);
-
-	//TODO: This is where the new objects need to be rendered, the new in-scene objects should be members of zoneclass
-	m_centreSkull->Render(Direct3D->GetDeviceContext());
-	result = ShaderManager->RenderFireShader(Direct3D->GetDeviceContext(), m_centreSkull->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-		m_centreSkull->GetTexture1(), m_centreSkull->GetTexture2(), m_centreSkull->GetTexture3(), frameTime, scrollSpeeds,
-		scales, distortion1, distortion2, distortion3, distortionScale, distortionBias);
-	if (!result)
-	{
-		return false;
-	}
-
 	// Turn the Z buffer back and back face culling on.
 	Direct3D->TurnZBufferOn();
 	Direct3D->TurnOnCulling();
@@ -451,6 +517,17 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 	{
 		Direct3D->EnableWireframe();
 	}
+
+	// Reset the world matrix.
+	Direct3D->GetWorldMatrix(worldMatrix);
+	m_WindowPane->Render(Direct3D->GetDeviceContext());
+	result = ShaderManager->RenderGlassShader(Direct3D->GetDeviceContext(), m_WindowPane->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_WindowPane->GetTexture(),
+		m_WindowPane->GetNormalMap(), TextureManager->GetTexture(0), m_WindowPane->m_refractionScale);
+	if (!result)
+	{
+		return false;
+	}
+
 
 
 	// Render the terrain cells (and cell lines if needed).
@@ -484,6 +561,22 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 		}
 	}
 	
+	// Reset the world matrix.
+	Direct3D->GetWorldMatrix(worldMatrix);
+	translationMatrix = XMMatrixTranslation(m_CentreSkull->position.x, m_CentreSkull->position.y, m_CentreSkull->position.z);
+	worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
+	m_CentreSkull->Render(Direct3D->GetDeviceContext());
+	result = ShaderManager->RenderFireShader(Direct3D->GetDeviceContext(), m_CentreSkull->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+		m_CentreSkull->GetTexture1(), m_CentreSkull->GetTexture2(), m_CentreSkull->GetTexture3(), frameTime, scrollSpeeds,
+		scales, distortion1, distortion2, distortion3, distortionScale, distortionBias);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Reset the world matrix.
+	Direct3D->GetWorldMatrix(worldMatrix);
+
 	// Turn off wire frame rendering of the terrain if it was on.
 	if(m_wireFrame)
 	{

@@ -57,6 +57,8 @@ public:
 	ID3D11ShaderResourceView* GetTexture2();
 	ID3D11ShaderResourceView* GetTexture3();
 
+	XMFLOAT3 position;
+
 private:
 	bool InitializeBuffers(ID3D11Device*);
 	void ShutdownBuffers();

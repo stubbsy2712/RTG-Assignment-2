@@ -21,7 +21,8 @@
 #include "skydomeclass.h"
 #include "terrainclass.h"
 #include "firemodelclass.h"
-
+#include "WindowModelClass.h"
+#include "rendertextureclass.h"
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ZoneClass
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,10 +40,15 @@ public:
 private:
 	void HandleMovementInput(InputClass*, float);
 	bool Render(D3DClass*, ShaderManagerClass*, TextureManagerClass*);
+	//bool RenderToTexture(float rotation);
 
 private:
+
+	FireModelClass* m_CentreSkull;
+	WindowModelClass* m_WindowPane;
+	RenderTextureClass* m_RenderTexture;
+
 	UserInterfaceClass* m_UserInterface;
-	FireModelClass* m_centreSkull;
 	CameraClass* m_Camera;
 	LightClass* m_Light;
 	PositionClass* m_Position;

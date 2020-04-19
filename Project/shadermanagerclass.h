@@ -16,7 +16,8 @@
 #include "skydomeshaderclass.h"
 #include "terrainshaderclass.h"
 #include "fireshaderclass.h"
-
+#include "glassshaderclass.h"
+#include "bubbleshaderclass.h"
 ////////////////////////////////////////////////////////////////////////////////
 // Class name: ShaderManagerClass
 ////////////////////////////////////////////////////////////////////////////////
@@ -39,8 +40,13 @@ public:
 							 ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, XMFLOAT3, XMFLOAT4);
 	bool RenderFireShader(ID3D11DeviceContext*, int, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*,
 		ID3D11ShaderResourceView*, float, XMFLOAT3, XMFLOAT3, XMFLOAT2, XMFLOAT2, XMFLOAT2, float, float);
+	bool RenderGlassShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*,
+		ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, float);
+	//bool RenderBubbleShader;
 
 private:
+	BubbleShaderClass* m_BubbleShader;
+	GlassShaderClass* m_GlassShader;
 	ColorShaderClass* m_ColorShader;
 	TextureShaderClass* m_TextureShader;
 	LightShaderClass* m_LightShader;
