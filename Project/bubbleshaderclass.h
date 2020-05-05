@@ -1,9 +1,13 @@
+////////////////////////////////////////////////////////////////////////////////
+// Filename: bubbleshaderclass.h
+////////////////////////////////////////////////////////////////////////////////
 #ifndef _BUBBLESHADERCLASS_H_
 #define BUBBLESHADERCLASS_H_
 
-
+//#include <d3d11.h>
 #include <d3d11_1.h>
-#include <d3dcompiler.h>
+//#include <d3dcompiler.h>
+#include <d3dx9shader.h>
 #include <DirectXMath.h> 
 
 using namespace DirectX;
@@ -42,9 +46,10 @@ public:
 	BubbleShaderClass(const BubbleShaderClass&);
 	~BubbleShaderClass();
 
-	bool Initialize(ID3D11Device*, HWND);
+	bool Initialize(ID3D11Device*, IDirect3DDevice9*, HWND);
 	void Shutdown();
-	bool Render(ID3D11DeviceContext*, int, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&, ID3D11ShaderResourceView*, XMFLOAT3);
+	bool Render(ID3D11DeviceContext*, int, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&, ID3D11ShaderResourceView*, ID3D11ShaderResourceView* , const XMFLOAT3);
+	//bool Render9(IDirect3DDeviceContext*, int, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, const XMFLOAT3);
 	// c0   - { 0.0,  0.5, 1.0, 2.0}
 	// c1   - { 4.0, .5pi, pi, 2pi}  
 	// c2   - {1, -1/3!, 1/5!, -1/7!} for sin    (1.0f,      -1.0f/6.0f,  1.0f/120.0f, -1.0f/5040.0f)
@@ -63,16 +68,18 @@ public:
 	//Copied from the vs file.
 
 private:
-	bool InitializeShader(ID3D11Device*, HWND, WCHAR*, WCHAR*);
+	bool InitializeShader(ID3D11Device*, IDirect3DDevice9*, HWND, WCHAR*, WCHAR*);
 	void ShutdownShader();
 	void OutputShaderErrorMessage(ID3D10Blob*, HWND, WCHAR*);
 
-	bool SetShaderParameters(ID3D11DeviceContext*, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&, ID3D11ShaderResourceView*, XMFLOAT3);
+	bool SetShaderParameters(ID3D11DeviceContext*, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&, ID3D11ShaderResourceView*, const XMFLOAT3);
 	void RenderShader(ID3D11DeviceContext*, int);
 
 private:
-	ID3D11VertexShader* m_vertexShader;
-	ID3D11PixelShader* m_pixelShader;
+	//ID3D11VertexShader* m_vertexShader;
+	//ID3D11PixelShader* m_pixelShader;
+	IDirect3DVertexShader9* m_vertexShader9;
+	IDirect3DPixelShader9* m_pixelShader9;
 	ID3D11InputLayout* m_layout;
 	ID3D11SamplerState* m_sampleState;
 	ID3D11Buffer* m_matrixBuffer;

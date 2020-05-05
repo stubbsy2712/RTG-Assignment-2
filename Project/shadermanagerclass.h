@@ -28,7 +28,7 @@ public:
 	ShaderManagerClass(const ShaderManagerClass&);
 	~ShaderManagerClass();
 
-	bool Initialize(ID3D11Device*, HWND);
+	bool Initialize(ID3D11Device*, IDirect3DDevice9*, HWND);
 	void Shutdown();
 
 	bool RenderColorShader(ID3D11DeviceContext*, int, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&);
@@ -42,7 +42,7 @@ public:
 		ID3D11ShaderResourceView*, float, XMFLOAT3, XMFLOAT3, XMFLOAT2, XMFLOAT2, XMFLOAT2, float, float);
 	bool RenderGlassShader(ID3D11DeviceContext*, int, XMMATRIX, XMMATRIX, XMMATRIX, ID3D11ShaderResourceView*,
 		ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, float);
-	//bool RenderBubbleShader;
+	bool RenderBubbleShader(ID3D11DeviceContext*, int, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&, ID3D11ShaderResourceView*, ID3D11ShaderResourceView*, const XMFLOAT3&);
 
 private:
 	BubbleShaderClass* m_BubbleShader;

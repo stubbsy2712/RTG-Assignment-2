@@ -69,7 +69,7 @@ bool ApplicationClass::Initialize(HINSTANCE hinstance, HWND hwnd, int screenWidt
 	}
 
 	// Initialize the shader manager object.
-	result = m_ShaderManager->Initialize(m_Direct3D->GetDevice(), hwnd);
+	result = m_ShaderManager->Initialize(m_Direct3D->GetDevice(), m_Direct3D->GetDevice9(), hwnd);
 	if(!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the shader manager object.", L"Error", MB_OK);

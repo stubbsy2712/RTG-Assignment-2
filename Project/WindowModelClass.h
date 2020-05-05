@@ -17,5 +17,5 @@ public:
 
 	WindowModelClass();
 
-	float m_refractionScale = 0.1f;
+	float m_refractionScale = 0.6f;
 };

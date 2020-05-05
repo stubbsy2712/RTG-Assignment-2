@@ -26,25 +26,35 @@ void FrustumClass::Initialize(float screenDepth)
 }
 
 
-void FrustumClass::ConstructFrustum(const XMMATRIX& projectionMatrix, const XMMATRIX& viewMatrix)
+void FrustumClass::ConstructFrustum(const XMMATRIX& projectionMatrix, const XMMATRIX& viewMatrix, float zoomAdder)
 {
 	XMFLOAT4X4 pMatrix, matrix;
 	float zMinimum, r, length;
 	XMMATRIX finalMatrix;
 
-
 	// Convert the projection matrix into a 4x4 float type.
 	XMStoreFloat4x4(&pMatrix, projectionMatrix);
 	//pMatrix = projectionMatrix;
 
+	//x4 and x1 is left and right plane
+	//x4 and x2 is bottom and top plane
+	//x4 and x3 is near and far plane
+	pMatrix._13 += zoomAdder;
+	pMatrix._23 += zoomAdder;
+	pMatrix._33 += zoomAdder;
+	pMatrix._43 += zoomAdder;
+	//Construction of the far plane has been modified so it is unaffected by these values changing
+	//Each of it's value has zoomAdder added back onto it (as the modified values above are subtracted normally)
+
 	// Calculate the minimum Z distance in the frustum.
 	zMinimum = -pMatrix._43 / pMatrix._33;
 	r = m_screenDepth / (m_screenDepth - zMinimum);
-
+	
 	// Load the updated values back into the projection matrix.
 	pMatrix._33 = r;
 	pMatrix._43 = -r * zMinimum;
 	
+
 	//Xu, to tidy up - 04/01/2016
 	//projectionMatrix = XMLoadFloat4x4(&pMatrix);
 	
@@ -69,10 +79,10 @@ void FrustumClass::ConstructFrustum(const XMMATRIX& projectionMatrix, const XMMA
 	m_planes[0][3] /= length;
 
 	// Calculate far plane of frustum.
-	m_planes[1][0] = matrix._14 - matrix._13;
-	m_planes[1][1] = matrix._24 - matrix._23;
-	m_planes[1][2] = matrix._34 - matrix._33;
-	m_planes[1][3] = matrix._44 - matrix._43;
+	m_planes[1][0] = matrix._14 - matrix._13 + zoomAdder;
+	m_planes[1][1] = matrix._24 - matrix._23 + zoomAdder;
+	m_planes[1][2] = matrix._34 - matrix._33 + zoomAdder;
+	m_planes[1][3] = matrix._44 - matrix._43 + zoomAdder;
 
 	// Normalize the far plane.
 	length = sqrtf((m_planes[1][0] * m_planes[1][0]) + (m_planes[1][1] * m_planes[1][1]) + (m_planes[1][2] * m_planes[1][2]));

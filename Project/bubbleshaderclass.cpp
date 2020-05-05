@@ -1,9 +1,11 @@
-#include "bubbleshaderclass.h"
+#include "bubbleshaderclass.h" 
+#include <d3dx9shader.h>
+#include <d3dcompiler.h>
 
 BubbleShaderClass::BubbleShaderClass()
 {
-	m_vertexShader = 0;
-	m_pixelShader = 0;
+	m_vertexShader9 = 0;
+	m_pixelShader9 = 0;
 	m_layout = 0;
 	m_sampleState = 0;
 	m_matrixBuffer = 0;
@@ -21,12 +23,12 @@ BubbleShaderClass::~BubbleShaderClass()
 {
 }
 
-bool BubbleShaderClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool BubbleShaderClass::Initialize(ID3D11Device* device, IDirect3DDevice9* device9, HWND hwnd)
 {
 	bool result;
 	
 	// Initialize the vertex and pixel shaders.
-	result = InitializeShader(device, hwnd, L"../Project/bubbleshader.vs", L"../Project/bubbleshader.ps");
+	result = InitializeShader(device, device9, hwnd, L"../Project/bubbleshader.vs", L"../Project/bubbleshader.ps");
 	if (!result)
 	{
 		return false;
@@ -43,7 +45,8 @@ void BubbleShaderClass::Shutdown()
 	return;
 }
 
-bool BubbleShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix, const XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* texture, XMFLOAT3 cameraPosition)
+bool BubbleShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix, const XMMATRIX& projectionMatrix,
+	ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* filmTexture, const XMFLOAT3 cameraPosition)
 {
 	bool result;
 
@@ -80,9 +83,12 @@ bool BubbleShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCoun
 //	return true;
 //}
 
-bool BubbleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
+bool BubbleShaderClass::InitializeShader(ID3D11Device* device,  IDirect3DDevice9* device9, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT result;
+	LPD3DXBUFFER* vertexShaderBuffer9;
+	LPD3DXBUFFER* pixelShaderBuffer9;
+	LPD3DXBUFFER* errorMessage9;
 	ID3D10Blob* errorMessage;
 	ID3D10Blob* vertexShaderBuffer;
 	ID3D10Blob* pixelShaderBuffer;
@@ -97,28 +103,27 @@ bool BubbleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
+	errorMessage9 = new LPD3DXBUFFER;
+	vertexShaderBuffer9 = new LPD3DXBUFFER;
+	pixelShaderBuffer9 = new LPD3DXBUFFER;
 
 	// Compile the vertex shader code.
-	result = D3DCompileFromFile(vsFilename, NULL, NULL, "BubbleVertexShader", "vs_1_1",
-		D3D10_SHADER_ENABLE_STRICTNESS, 0, &vertexShaderBuffer, &errorMessage);
-	if (FAILED(result))
-	{
-		// If the shader failed to compile it should have writen something to the error message.
-		if (errorMessage)
-		{
-			OutputShaderErrorMessage(errorMessage, hwnd, vsFilename);
-		}
-		// If there was nothing in the error message then it simply could not find the shader file itself.
-		else
-		{
-			MessageBox(hwnd, vsFilename, L"Missing Shader File", MB_OK);
-		}
+	//psrcfile, hsrcmodule, psrcresource, psrcdata, stcdatalen
+	
+	//HRESULT WINAPI
+	//	D3DXAssembleShaderFromFileW(
+	//		LPCWSTR                         pSrcFile,
+	//		CONST D3DXMACRO *				pDefines,
+	//		LPD3DXINCLUDE                   pInclude,
+	//		DWORD                           Flags,
+	//		LPD3DXBUFFER *					ppShader,
+	//		LPD3DXBUFFER *					ppErrorMsgs);
 
-		return false;
-	}
-
+	//wstring wc = L"bubbleshader.ps";
+	LPCWSTR pSrcFile = L"bubbleshader.ps";
+	
 	// Compile the pixel shader code.
-	result = D3DCompileFromFile(psFilename, NULL, NULL, "LightPixelShader", "ps_1_4", D3D10_SHADER_ENABLE_STRICTNESS, 0, &pixelShaderBuffer, &errorMessage);
+	result = D3DXAssembleShaderFromFile(pSrcFile, NULL, NULL, NULL, pixelShaderBuffer9, errorMessage9);
 
 	if (FAILED(result))
 	{
@@ -136,19 +141,65 @@ bool BubbleShaderClass::InitializeShader(ID3D11Device* device, HWND hwnd, WCHAR*
 		return false;
 	}
 
-	// Create the vertex shader from the buffer.
-	result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
-	if (FAILED(result))
-	{
-		return false;
-	}
+	pSrcFile = L"bubbleshader.vs";
 
-	// Create the pixel shader from the buffer.
-	result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader);
+	result = D3DXAssembleShaderFromFile(pSrcFile, NULL, NULL, NULL, vertexShaderBuffer9, errorMessage9);
 	if (FAILED(result))
 	{
+		// If the shader failed to compile it should have writen something to the error message.
+		if (errorMessage)
+		{
+			OutputShaderErrorMessage(errorMessage, hwnd, vsFilename);
+		}
+		// If there was nothing in the error message then it simply could not find the shader file itself.
+		else
+		{
+			MessageBox(hwnd, vsFilename, L"Missing Shader File", MB_OK);
+		}
+
 		return false;
 	}
+	// Create the vertex shader from the buffer.
+
+	// DirectX 9!
+	D3DVERTEXELEMENT9 MyDecl[] =
+	{  
+		// stream, offset, type, method, usage, usage index
+		{ 0, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 0},  
+		{ 0, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 0},
+		{ 0, 24, D3DDECLTYPE_FLOAT2, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_TEXCOORD, 0},
+		// Second stream is second mesh  
+		{ 1, 0, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_POSITION, 1},
+		{ 1, 12, D3DDECLTYPE_FLOAT3, D3DDECLMETHOD_DEFAULT, D3DDECLUSAGE_NORMAL, 1},
+		D3DDECL_END()
+	}; // and to validate and create the tokenized version
+
+	IDirect3DVertexDeclaration9* pDecl;
+	device9->CreateVertexDeclaration(MyDecl, &pDecl);
+	// Set the declaration
+	device9->SetVertexDeclaration(pDecl);
+
+	DWORD bufferThing[] =
+	{
+		1, 2, 3, 4
+	};
+
+	result = device9->CreateVertexShader(bufferThing, &m_vertexShader9);
+
+	//result = device->CreateVertexShader(vertexShaderBuffer->GetBufferPointer(), vertexShaderBuffer->GetBufferSize(), NULL, &m_vertexShader);
+	//if (FAILED(result))
+	//{
+	//	return false;
+	//}
+
+	//// Create the pixel shader from the buffer.
+	//result = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(), NULL, &m_pixelShader);
+	//if (FAILED(result))
+	//{
+	//	return false;
+	//}
+
+	
 
 	// Create the vertex input layout description.
 	// This setup needs to match the VertexType stucture in the ModelClass and in the shader.
@@ -303,17 +354,17 @@ void BubbleShaderClass::ShutdownShader()
 	}
 
 	// Release the pixel shader.
-	if (m_pixelShader)
+	if (m_pixelShader9)
 	{
-		m_pixelShader->Release();
-		m_pixelShader = 0;
+		m_pixelShader9->Release();
+		m_pixelShader9 = 0;
 	}
 
 	// Release the vertex shader.
-	if (m_vertexShader)
+	if (m_vertexShader9)
 	{
-		m_vertexShader->Release();
-		m_vertexShader = 0;
+		m_vertexShader9->Release();
+		m_vertexShader9 = 0;
 	}
 
 	return;
@@ -365,10 +416,15 @@ bool BubbleShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	XMFLOAT4 c1 = { 4.0f, 1.50796f, 3.14159f, 6.28219f };//multiples of pi
 	XMFLOAT4 c2 = { 1.0f, -0.16667f, 0.00833, 0.00020 };//factorials for sin
 	XMFLOAT4 c3 = { };//factorials for cos
-	XMMATRIX c4 = worldMatrix;
-	XMMATRIX c5 = viewMatrix;
-	XMMATRIX c6 = projectionMatrix;
-	XMFLOAT4 c7;
+	//Maybe need to transpose
+
+	XMFLOAT4X4 compositeMatrix;
+	XMStoreFloat4x4(&compositeMatrix, XMMatrixMultiply(viewMatrix, projectionMatrix));
+
+	XMFLOAT4 c4 = { compositeMatrix._11,  compositeMatrix._12, compositeMatrix._13, compositeMatrix._14 };
+	XMFLOAT4 c5 = { compositeMatrix._21,  compositeMatrix._22, compositeMatrix._23, compositeMatrix._24 };
+	XMFLOAT4 c6 = { compositeMatrix._31,  compositeMatrix._32, compositeMatrix._33, compositeMatrix._34 };
+	XMFLOAT4 c7 = { compositeMatrix._41,  compositeMatrix._42, compositeMatrix._43, compositeMatrix._44 };
 	XMFLOAT3 c8 = cameraPosition;
 	//There is no c9 :/
 	XMFLOAT4 c10 = { 1.02f, 0.04f, 0.0f, 0.0f };//fixup factor for Taylor series imprecision
@@ -379,10 +435,10 @@ bool BubbleShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, 
 	XMFLOAT4 c15;//4 wave dirYs
 	XMFLOAT4 c16;//time
 	XMFLOAT4 c17;//texture coordinate distortion
-	XMFLOAT4 c18;
-	XMFLOAT4 c19;
-	XMFLOAT4 c20;
-	XMFLOAT4 c21;
+	XMFLOAT4 c18;//worldMatrix[0]
+	XMFLOAT4 c19;//worldMatrix[1]
+	XMFLOAT4 c20;//worldMatrix[2]
+	XMFLOAT4 c21;//worldMatrix[3]
 	//MatrixBufferType* dataPtr;
 	//LightBufferType* dataPtr2;
 	//CameraBufferType* dataPtr3;
@@ -473,8 +529,9 @@ void BubbleShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int ind
 	deviceContext->IASetInputLayout(m_layout);
 
 	// Set the vertex and pixel shaders that will be used to render this triangle.
-	deviceContext->VSSetShader(m_vertexShader, NULL, 0);
-	deviceContext->PSSetShader(m_pixelShader, NULL, 0);
+	
+	//deviceContext->VSSetShader(m_vertexShader, NULL, 0);
+	//deviceContext->PSSetShader(m_pixelShader, NULL, 0);
 
 	// Set the sampler state in the pixel shader.
 	deviceContext->PSSetSamplers(0, 1, &m_sampleState);

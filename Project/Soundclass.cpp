@@ -20,7 +20,7 @@ SoundClass::~SoundClass()
 }
 
 
-bool SoundClass::Initialize(HWND hwnd)
+bool SoundClass::Initialize(HWND hwnd, char* soundFilePath, bool startPlayingImmideately)
 {
 	bool result;
 	// Initialize direct sound and the primary sound buffer.
@@ -31,21 +31,25 @@ bool SoundClass::Initialize(HWND hwnd)
 	}
 
 	// Load a wave audio file onto a secondary buffer.
-	result = LoadWaveFile("../Engine/data/RTGMusic_IndigoSoundscape.wav", &m_secondaryBuffer1);
+	result = LoadWaveFile(soundFilePath, &m_secondaryBuffer1);
 	if (!result)
 	{
 		return false;
 	}
 
-	// Play the wave file now that it has been loaded.
-	result = PlayWaveFile();
-	if (!result)
+	if (startPlayingImmideately)
 	{
-		return false;
+		// Play the wave file now that it has been loaded.
+		result = PlayWaveFile();
+		if (!result)
+		{
+			return false;
+		}
 	}
 
 	return true;
 }
+
 void SoundClass::Shutdown()
 {
 	// Release the secondary buffer.
@@ -56,6 +60,29 @@ void SoundClass::Shutdown()
 
 	return;
 }
+
+bool SoundClass::playFor(float timeToPlay)
+{
+	timeRemaining = timeToPlay;
+	soundClipTimeLength = timeToPlay;
+	return PlayWaveFile();
+}
+
+void SoundClass::tick(float timePassed)
+{
+	if (timeRemaining > 0)
+	{
+		timeRemaining -= timePassed;
+		if (!(timeRemaining > 0))
+		{
+			//Reset the thing
+
+			if (repeating)
+				playFor(soundClipTimeLength);
+		}
+	}
+}
+
 bool SoundClass::InitializeDirectSound(HWND hwnd)
 {
 	HRESULT result;

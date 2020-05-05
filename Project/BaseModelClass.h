@@ -2,6 +2,7 @@
 #include <d3d11_1.h>
 #include <DirectXMath.h>
 #include <vector>
+#include "Collidable.h"
 using namespace DirectX;
 
 
@@ -10,7 +11,7 @@ using namespace DirectX;
 
 class TextureClass;
 
-class BaseModelClass
+class BaseModelClass : public Collidable
 {
 public:
 	struct ModelType

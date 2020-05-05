@@ -24,7 +24,7 @@ public:
 
 	void Initialize(float);
 
-	void ConstructFrustum(const XMMATRIX&, const XMMATRIX&);
+	void ConstructFrustum(const XMMATRIX&, const XMMATRIX&, float);
 
 	bool CheckPoint(float, float, float);
 	bool CheckCube(float, float, float, float);

@@ -14,6 +14,7 @@ ShaderManagerClass::ShaderManagerClass()
 	m_TerrainShader = 0;
 	m_FireShader = 0;
 	m_GlassShader = 0;
+	m_BubbleShader = 0;
 }
 
 
@@ -27,10 +28,22 @@ ShaderManagerClass::~ShaderManagerClass()
 }
 
 
-bool ShaderManagerClass::Initialize(ID3D11Device* device, HWND hwnd)
+bool ShaderManagerClass::Initialize(ID3D11Device* device, IDirect3DDevice9* device9, HWND hwnd)
 {
 	bool result;
 
+	//m_BubbleShader = new BubbleShaderClass;
+	//if (!m_BubbleShader)
+	//{
+	//	return false;
+	//}
+
+	// Initialize the color shader object.
+	//result = m_BubbleShader->Initialize(device, device9, hwnd);
+	//if (!result)
+	//{
+	//	return false;
+	//}
 
 	// Create the color shader object.
 	m_ColorShader = new ColorShaderClass;
@@ -259,11 +272,16 @@ bool ShaderManagerClass::RenderFireShader(ID3D11DeviceContext* deviceContext, in
 }
 
 bool ShaderManagerClass::RenderGlassShader(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
-	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* colorTexture,
-	ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* refractionTexture,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* colorTexture, ID3D11ShaderResourceView* normalTexture, ID3D11ShaderResourceView* refractionTexture,
 	float refractionScale)
 {
 	return m_GlassShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, colorTexture, normalTexture, refractionTexture, refractionScale);
+}
+
+bool ShaderManagerClass::RenderBubbleShader(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix,
+	const XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* colourTexture, ID3D11ShaderResourceView* filmTexture, const XMFLOAT3& cameraPosition)
+{
+	return m_BubbleShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, colourTexture, filmTexture, cameraPosition);
 }
 
 bool ShaderManagerClass::RenderTerrainShader(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix,

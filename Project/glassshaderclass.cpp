@@ -335,13 +335,13 @@ bool GlassShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, X
 	MatrixBufferType* dataPtr;
 	GlassBufferType* dataPtr2;
 	unsigned int bufferNumber;
-
-
-	// Transpose the matrices to prepare them for the shader.
-	DirectX::XMMatrixTranspose(worldMatrix);
-	DirectX::XMMatrixTranspose(viewMatrix);
-	DirectX::XMMatrixTranspose(projectionMatrix);
 	
+	// Transpose the matrices to prepare them for the shader.
+
+	worldMatrix = DirectX::XMMatrixTranspose(worldMatrix);
+	viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
+	projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
+
 	//D3DXMatrixTranspose(&worldMatrix, &worldMatrix);
 	//D3DXMatrixTranspose(&viewMatrix, &viewMatrix);
 	//D3DXMatrixTranspose(&projectionMatrix, &projectionMatrix);
@@ -357,9 +357,14 @@ bool GlassShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext, X
 	dataPtr = (MatrixBufferType*)mappedResource.pData;
 
 	// Copy the matrices into the matrix constant buffer.
+
 	dataPtr->world = worldMatrix;
 	dataPtr->view = viewMatrix;
 	dataPtr->projection = projectionMatrix;
+
+	//dataPtr->world = DirectX::XMMatrixTranspose(worldMatrix);
+	//dataPtr->view = DirectX::XMMatrixTranspose(viewMatrix);
+	//dataPtr->projection = DirectX::XMMatrixTranspose(projectionMatrix);
 
 	// Unlock the matrix constant buffer.
 	deviceContext->Unmap(m_matrixBuffer, 0);

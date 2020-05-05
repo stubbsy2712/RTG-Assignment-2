@@ -28,7 +28,7 @@ public:
 	bool Frame(ID3D11DeviceContext*, int, float, float, float, float, float, float);
 	bool Render(D3DClass*, ShaderManagerClass*, const XMMATRIX&, const XMMATRIX&, const XMMATRIX&);
 
-	bool UpdateRenderCounts(ID3D11DeviceContext*, int, int, int);
+	bool UpdateRenderCounts(ID3D11DeviceContext*, int, int, int, int, int, int, int, int);
 
 private:
 	bool UpdateFpsString(ID3D11DeviceContext*, int);
@@ -40,6 +40,7 @@ private:
 	int m_previousFps;
 	int m_previousPosition[6];
 	TextClass* m_RenderCountStrings;
+	TextClass* m_GameStrings;
 	MiniMapClass* m_MiniMap;
 };
 

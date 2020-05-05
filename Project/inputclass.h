@@ -43,6 +43,8 @@ public:
 	int GetMouseY();
 	int GetMouseXDelta();
 	int GetMouseYDelta();
+	bool isLeftMouseDown();
+	bool isRightMouseDown();
 
 	bool IsEscapePressed();
 	bool IsLeftPressed();
@@ -56,8 +58,12 @@ public:
 	bool IsRPressed();
 	bool IsFPressed();
 	bool IsZPressed();
+	bool IsQPressed();
+	bool IsEPressed();
 	bool IsPgUpPressed();
 	bool IsPgDownPressed();
+	bool IsSpacePressed();
+	bool IsShiftPressed();
 
 	bool IsF1Toggled();
 	bool IsF2Toggled();

@@ -13,9 +13,29 @@ ZoneClass::ZoneClass()
 	m_Frustum = 0;
 	m_SkyDome = 0;
 	m_Terrain = 0;
+	
+	m_BubbleSkull = 0;
 	m_CentreSkull = 0;
 	m_WindowPane = 0;
+	
 	m_RenderTexture = 0;
+	
+	m_backgroundMusic = 0;
+	m_footPrintAudio = 0;
+	m_damageAudio = 0;
+	m_batKilledAudio = 0;
+	m_shootingAudio = 0;
+
+	m_objectiveModel = 0;
+	m_fireBatModel = 0;
+
+	m_lastFramePosition = 0;
+
+	m_northBatSpawner = 0;
+	m_southBatSpawner = 0;
+	m_eastBatSpawner = 0;
+	m_westBatSpawner = 0;
+	m_batZone = 0;
 }
 
 
@@ -32,6 +52,73 @@ ZoneClass::~ZoneClass()
 bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int screenHeight, float screenDepth)
 {
 	bool result;
+	//TODO: Fix the last frame position stuff.
+	//TODO: Initialize all the spawners.
+	m_batZone = new CuboidZone;
+	m_batZone->leftBound = 0;
+	m_batZone->rightBound = 500;
+	m_batZone->backBound = 500;
+	m_batZone->frontBound = 0;
+	m_batZone->lowerBound = 20;
+	m_batZone->upperBound = 50;
+
+	m_bulletModel = new ModelClass;
+	result = m_bulletModel->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(),
+		"../Project/data/models/Bullet.txt", "../Project/data/textures/BulletColour.dds", "../Project/data/textures/BulletColour.dds");
+	if (!result)
+	{
+		return false;
+	}
+
+	m_glassCannonModel = new WindowModelClass;
+	result = m_glassCannonModel->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(),
+		"../Project/data/models/NavalCannon.txt", "../Project/data/textures/glass01.dds", "../Project/data/textures/glass01.dds", "../Project/data/textures/glass01.dds");
+	if (!result)
+	{
+		return false;
+	}
+	
+	m_northBatSpawner = new BatSpawner;
+	result = m_northBatSpawner->InitializeWithModel(m_glassCannonModel);
+	if (!result)
+	{
+		return false;
+	}
+	m_northBatSpawner->setPosition(m_northSpawnerLocation);
+	m_spawners.push_back(m_northBatSpawner);
+
+	m_westBatSpawner = new BatSpawner;
+	result = m_westBatSpawner->InitializeWithModel(m_glassCannonModel);
+	if (!result)
+	{
+		return false;
+	}
+	m_westBatSpawner->setPosition(m_westSpawnerLocation);
+	m_spawners.push_back(m_westBatSpawner);
+
+	m_eastBatSpawner = new BatSpawner;
+	result = m_eastBatSpawner->InitializeWithModel(m_glassCannonModel);
+	if (!result)
+	{
+		return false;
+	}
+	m_eastBatSpawner->setPosition(m_eastSpawnerLocation);
+	m_spawners.push_back(m_eastBatSpawner);
+
+	m_southBatSpawner = new BatSpawner;
+	result = m_southBatSpawner->InitializeWithModel(m_glassCannonModel);
+	if (!result)
+	{
+		return false;
+	}
+	m_southBatSpawner->setPosition(m_southSpawnerLocation);
+	m_spawners.push_back(m_southBatSpawner);
+
+	m_lastFramePosition = new XMFLOAT3;
+	if (!m_lastFramePosition)
+	{
+		return false;
+	}
 
 	// Create the render to texture object.
 	m_RenderTexture = new RenderTextureClass;
@@ -84,6 +171,8 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 	// Initialize the light object.
 	m_Light->SetDiffuseColor(1.0f, 1.0f, 1.0f, 1.0f);
 	m_Light->SetDirection(-0.5f, -1.0f, -0.5f);
+	m_Light->SetAmbientColor(0.2f, 0.2f, 0.2f, 1.0f);
+	m_Light->SetPosition(500.0f, 100.0f, 500.0f);
 
 	// Create the position object.
 	m_Position = new PositionClass;
@@ -106,6 +195,22 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 	// Initialize the frustum object.
 	m_Frustum->Initialize(screenDepth);
 
+	// Initialize the flaming bat model object.
+	m_fireBatModel = new FireModelClass;
+	if (!m_fireBatModel)
+	{
+		return false;
+	}
+
+	result = m_fireBatModel->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/bat.txt",
+		"../Project/data/textures/fire01.dds", "../Project/data/textures/noise01.dds", "../Project/data/textures/alpha01.dds");
+
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the flaming bat object.", L"Error", MB_OK);
+		return false;
+	}
+
 	// Create the centre skull object.
 	m_CentreSkull = new FireModelClass;
 	if (!m_CentreSkull)
@@ -114,7 +219,7 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 	}
 	m_CentreSkull->position = XMFLOAT3(800, 10, 600);
 
-	// Initialize the frustum object.
+	// Initialize the flaming head object.
 	result = m_CentreSkull->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/new-ninjaHead.txt",
 		"../Project/data/textures/fire01.dds", "../Project/data/textures/noise01.dds", "../Project/data/textures/alpha01.dds");
 
@@ -123,6 +228,24 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		MessageBox(hwnd, L"Could not initialize the flame skull object.", L"Error", MB_OK);
 		return false;
 	}
+
+	//// Create the centre bubble skull object.
+	//m_BubbleSkull = new BubbleModelClass;
+	//if (!m_BubbleSkull)
+	//{
+	//	return false;
+	//}
+	//m_BubbleSkull->position = XMFLOAT3(800, 10, 600);
+
+	//// Initialize the Bubble Skull object.
+	//result = m_BubbleSkull->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/new-ninjaHead.txt",
+	//	"../Project/data/textures/rainbowfilm_smooth.dds", "../Project/data/textures/room-dxt5.dds");
+
+	//if (!result)
+	//{
+	//	MessageBox(hwnd, L"Could not initialize the bubble skull object.", L"Error", MB_OK);
+	//	return false;
+	//}
 
 	// Create the sky dome object.
 	m_SkyDome = new SkyDomeClass;
@@ -154,6 +277,8 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		return false;
 	}
 
+	// Create the window model object.
+	
 	m_WindowPane = new WindowModelClass;
 	if (!m_WindowPane)
 	{
@@ -166,7 +291,51 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		MessageBox(hwnd, L"Could not initialize the glass object.", L"Error", MB_OK);
 		return false;
 	}
-	
+	m_collidables.push_back(m_WindowPane);
+	m_WindowPane->setPosition(250, 5, 10);
+
+	m_backgroundMusic = new SoundClass;
+	result = m_backgroundMusic->Initialize(hwnd, "../Project/data/sounds/Snowy_Footstep_2.wav", true);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the background music object.", L"Error", MB_OK);
+		return false;
+	}
+	m_backgroundMusic->repeating = true;
+
+	m_footPrintAudio = new SoundClass;
+	result = m_footPrintAudio->Initialize(hwnd, "../Project/data/sounds/Snowy_Footstep_2.wav", false);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the footprint sound object.", L"Error", MB_OK);
+		return false;
+	}
+	m_Position->SetFootstepSound(m_footPrintAudio);
+
+	m_shootingAudio = new SoundClass;
+	result = m_shootingAudio->Initialize(hwnd, "../Project/data/sounds/Shooting_Sound_Effect.wav", false);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the firing sound object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_batKilledAudio = new SoundClass;
+	result = m_batKilledAudio->Initialize(hwnd, "../Project/data/sounds/Bat_Sound_Effect.wav", false);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the bat dying sound object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_damageAudio = new SoundClass;
+	result = m_damageAudio->Initialize(hwnd, "../Project/data/sounds/Minecraft_Oof.wav", false);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the bat dying sound object.", L"Error", MB_OK);
+		return false;
+	}
+
 	// Set the UI to display by default.
 	m_displayUI = true;
 
@@ -185,12 +354,27 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 
 void ZoneClass::Shutdown()
 {
+	//TODO: Release all the new objects.
 	// Release the terrain object.
 	if(m_Terrain)
 	{
 		m_Terrain->Shutdown();
 		delete m_Terrain;
 		m_Terrain = 0;
+	}
+
+	//Release both sounds
+	if (m_footPrintAudio)
+	{
+		m_footPrintAudio->Shutdown();
+		delete m_footPrintAudio;
+		m_footPrintAudio = 0;
+	}
+	if (m_backgroundMusic)
+	{
+		m_backgroundMusic->Shutdown();
+		delete m_backgroundMusic;
+		m_backgroundMusic = 0;
 	}
 
 	// Release the sky dome object.
@@ -243,6 +427,14 @@ void ZoneClass::Shutdown()
 		delete m_CentreSkull;
 		m_CentreSkull = 0;
 	}
+
+	//if (m_BubbleSkull)
+	//{
+	//	m_BubbleSkull->Shutdown();
+	//	delete m_BubbleSkull;
+	//	m_BubbleSkull = 0;
+	//}
+
 	if (m_WindowPane)
 	{
 		m_WindowPane->Shutdown();
@@ -255,6 +447,11 @@ void ZoneClass::Shutdown()
 		m_RenderTexture->Shutdown();
 		delete m_RenderTexture;
 		m_RenderTexture = 0;
+	}
+	if (m_lastFramePosition)
+	{
+		delete m_lastFramePosition;
+		m_lastFramePosition = 0;
 	}
 	return;
 }
@@ -304,13 +501,75 @@ bool ZoneClass::Frame(D3DClass* Direct3D, InputClass* Input, ShaderManagerClass*
 	bool result, foundHeight;
 	float posX, posY, posZ, rotX, rotY, rotZ, height;
 
-
 	// Do the frame input processing.
-	HandleMovementInput(Input, frameTime);
+	HandleMovementInput(Input, frameTime, Direct3D);
 
 	// Get the view point position/rotation.
 	m_Position->GetPosition(posX, posY, posZ);
 	m_Position->GetRotation(rotX, rotY, rotZ);
+	XMFLOAT3 positionAsVec = { posX, posY, posZ };
+
+	//Tick each of the SoundClass*
+	m_backgroundMusic->tick(frameTime);
+	m_footPrintAudio->tick(frameTime);
+	m_damageAudio->tick(frameTime);
+	m_batKilledAudio->tick(frameTime);
+	m_shootingAudio->tick(frameTime);
+	m_totalTime += frameTime;
+
+	//TODO: Check the angle is not too steep.
+	if (getAngleMovement() > m_angleTolerance)
+		pushBackPlayer();
+	//TODO: Move the enemies.
+	for each (Bat* b in m_enemies)
+	{
+		b->move(frameTime);
+		for each (BulletClass* bc in m_projectiles)
+		{
+			b->checkColliisonWithBullet(bc->getPosition(), this);
+		}
+	}
+	//Check Collisions between objects and the player
+	for each (Collidable* c in m_collidables)
+	{
+		c->checkCollisionPoint(&positionAsVec, this);
+	}
+	//Check collisions between objects and the floor
+	for each (Collidable* i in m_collidables)
+	{
+		for each (Collidable * j in m_collidables)
+		{
+			i->checkColliisonAABB(j->getBoundingBox(), this);
+		}
+	}
+	//Check colliisons for the bullets.
+
+	//for each (BulletClass * b in m_projectiles)
+	//{
+	//	for each (Collidable * j in m_collidables)
+	//	{
+	//		j->checkCollisionWithBullet(b->getPosition(), this);
+	//		m_projectiles.remove(b);
+	//	}
+	//	if (b)
+	//	{
+	//		if (isUnderground(b->getPosition()))
+	//		{
+	//			m_projectiles.remove(b);
+	//		}
+	//	}
+	//}
+
+	//TODO: Move the bullets.
+	for each (BulletClass* b in m_projectiles)
+	{
+		b->move(frameTime);
+	}
+	//TODO: Tick firing
+	tickFiring(frameTime);
+	//TODO: Set up previous frame's position.
+	//TODO: Tick the bat spawners
+	tickBatSpawners(Direct3D, frameTime);
 
 	// Do the frame processing for the user interface.
 	result = m_UserInterface->Frame(Direct3D->GetDeviceContext(), fps, posX, posY, posZ, rotX, rotY, rotZ);
@@ -329,9 +588,13 @@ bool ZoneClass::Frame(D3DClass* Direct3D, InputClass* Input, ShaderManagerClass*
 		foundHeight = m_Terrain->GetHeightAtPosition(posX, posZ, height);
 		if(foundHeight)
 		{
-			// If there was a triangle under the camera then position the camera just above it by one meter.
-			m_Position->SetPosition(posX, height + 1.0f, posZ);
-			m_Camera->SetPosition(posX, height + 1.0f, posZ);
+			if (posY < height + m_Position->getHeight() || m_Position->isGrounded())
+			{
+				// If there was a triangle under the camera then position the camera just above it by one meter.
+				m_Position->SetPosition(posX, height + m_Position->getHeight(), posZ);
+				m_Position->hitGround();
+				m_Camera->SetPosition(posX, height + m_Position->getHeight(), posZ);
+			}
 		}
 	}
 
@@ -341,12 +604,68 @@ bool ZoneClass::Frame(D3DClass* Direct3D, InputClass* Input, ShaderManagerClass*
 	{
 		return false;
 	}
+	m_lastFramePosition->x = posX;
+	m_lastFramePosition->y = posY;
+	m_lastFramePosition->z = posZ;
 
 	return true;
 }
 
+void ZoneClass::batHit(Bat* b)
+{
+	m_batKilledAudio->playFor(1);
+	incrementScore(1);
+	m_enemies.remove(b);
+}
 
-void ZoneClass::HandleMovementInput(InputClass* Input, float frameTime)
+void ZoneClass::playerHit(Bat* b)
+{
+	m_enemies.remove(b);
+	m_health -= 1;
+}
+
+void ZoneClass::pushBackPlayer()
+{
+	m_Position->SetPosition(m_lastFramePosition->x, m_lastFramePosition->y, m_lastFramePosition->z);
+}
+
+void ZoneClass::objectiveCollected(ObjectiveClass* o)
+{
+	m_objectives.remove(o);
+	incrementScore(1);
+	if (m_objectives.size() < 1)
+	{
+		spawnObjectives(5);
+	}
+}
+
+float* ZoneClass::getPlayerPositionXPtr()
+{
+	return m_Position->getPositionXPtr();
+}
+
+float* ZoneClass::getPlayerPositionYPtr()
+{
+	return m_Position->getPositionYPtr();
+}
+
+float* ZoneClass::getPlayerPositionZPtr()
+{
+	return m_Position->getPositionZPtr();
+}
+
+//XMFLOAT3* ZoneClass::getPlayerLocationPtr()
+//{
+//	return m_Position->GetPositionAsVector();
+//}
+
+
+int ZoneClass::getEnemyDifficulty()
+{
+	return m_batsDifficulty;
+}
+
+void ZoneClass::HandleMovementInput(InputClass* Input, float frameTime, D3DClass* d3d)
 {
 	bool keyDown;
 	float posX, posY, posZ, rotX, rotY, rotZ;
@@ -398,8 +717,27 @@ void ZoneClass::HandleMovementInput(InputClass* Input, float frameTime)
 	keyDown = Input->IsDPressed();
 	m_Position->MoveRight(keyDown);
 
+	keyDown = Input->IsSpacePressed();
+	m_Position->jump(keyDown);
+
+	keyDown = (Input->isLeftMouseDown() || Input->IsEPressed());
+	if (keyDown)
+		fire(d3d->GetDevice(), d3d->GetDeviceContext());
+
+	keyDown = (Input->isRightMouseDown() || Input->IsQPressed());
+	if (keyDown)
+		zoom();
+	else
+		unZoom();
+	adjustZoom(frameTime);
+
+	keyDown = Input->IsShiftPressed();
+	m_Position->sprint(keyDown);
+
 	// HandleMouse Rotations
 	m_Position->MouseRotate(Input->GetMouseXDelta(), Input->GetMouseYDelta());
+
+	m_Position->Update();
 
 	// Get the view point position/rotation.
 	m_Position->GetPosition(posX, posY, posZ);
@@ -439,6 +777,8 @@ void ZoneClass::HandleMovementInput(InputClass* Input, float frameTime)
 
 bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, TextureManagerClass* TextureManager)
 {
+	//TODO: Render... Everything
+
 	XMMATRIX worldMatrix, viewMatrix, projectionMatrix, baseViewMatrix, orthoMatrix, translationMatrix;
 	bool result;
 	XMFLOAT3 cameraPosition;
@@ -458,20 +798,22 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 		frameTime = 0.0f;
 	}
 
+	float fireModifer = abs(cosf(m_totalTime * m_distortionTimeMultiplier * XM_PI / 180));
+
 	// Set the three scrolling speeds for the three different noise textures.
-	scrollSpeeds = XMFLOAT3(1.3f, 2.1f, 2.3f);
+	scrollSpeeds = XMFLOAT3(1.3f * fireModifer, 2.1f * fireModifer, 2.3f * fireModifer);
 
 	// Set the three scales which will be used to create the three different noise octave textures.
 	scales = XMFLOAT3(1.0f, 2.0f, 3.0f);
+	
+	// The the scale and bias of the texture coordinate sampling perturbation.
+	distortionScale = 0.8f;
+	distortionBias = 0.5f;
 
 	// Set the three different x and y distortion factors for the three different noise textures.
 	distortion1 = XMFLOAT2(0.1f, 0.2f);
 	distortion2 = XMFLOAT2(0.1f, 0.3f);
 	distortion3 = XMFLOAT2(0.1f, 0.1f);
-
-	// The the scale and bias of the texture coordinate sampling perturbation.
-	distortionScale = 0.8f;
-	distortionBias = 0.5f;
 
 	// Generate the view matrix based on the camera's position.
 	m_Camera->Render();
@@ -487,7 +829,70 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 	cameraPosition = m_Camera->GetPosition();
 	
 	// Construct the frustum.
-	m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix);
+
+	//if (m_zooming)
+	//{
+	//	float yawRadians;
+	//	float pitchRadians;
+	//	float rollRadians;
+	//	m_Position->GetRotation(pitchRadians, yawRadians, rollRadians);
+	//	yawRadians *= XM_PI / 180;
+	//	pitchRadians *= XM_PI / 180;
+	//	rollRadians *= XM_PI / 180;
+
+	//	m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix, m_zoomingAdder);
+
+	//	projectionMatrix.r[0].m128_f32[3] += m_zoomingAdder * cosf(yawRadians);
+	//	projectionMatrix.r[1].m128_f32[3] += m_zoomingAdder * cosf(yawRadians);
+	//	projectionMatrix.r[2].m128_f32[3] += m_zoomingAdder * cosf(yawRadians);
+	//	projectionMatrix.r[3].m128_f32[3] += m_zoomingAdder * cosf(yawRadians);
+
+	//}
+	//else
+	//	m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix, 0);
+
+
+	float yawRadians;
+	float pitchRadians;
+	float rollRadians;
+	m_Position->GetRotation(pitchRadians, yawRadians, rollRadians);
+	yawRadians *= XM_PI / 180;
+	pitchRadians *= XM_PI / 180;
+	rollRadians *= XM_PI / 180;
+	
+	float amountToZoom = m_zoomingAdder * m_zoomState / m_timeToZoom;
+	m_Frustum->ConstructFrustum(projectionMatrix, viewMatrix, amountToZoom);
+	
+	XMFLOAT4X4 projectionMatrixAsVector;
+	XMStoreFloat4x4(&projectionMatrixAsVector, projectionMatrix);
+
+	//projectionMatrix.r[0].m128_f32[3] += amountToZoom * cosf(yawRadians);
+	//projectionMatrix.r[1].m128_f32[3] += amountToZoom * cosf(yawRadians);
+	//projectionMatrix.r[2].m128_f32[3] += amountToZoom * cosf(yawRadians);
+	//projectionMatrix.r[3].m128_f32[3] += amountToZoom * cosf(yawRadians);
+
+	projectionMatrixAsVector._11 += amountToZoom;// * cosf(yawRadians);//Stretches everything, left-right.
+	//projectionMatrixAsVector._12 += amountToZoom * cosf(yawRadians);//Rolls image
+	//projectionMatrixAsVector._13 += amountToZoom * cosf(yawRadians);//Blackbars the sides of the screen (like _23)
+	//projectionMatrixAsVector._14 += amountToZoom * cosf(yawRadians);//Untested.
+
+	//projectionMatrixAsVector._21 += amountToZoom * cosf(yawRadians);//Stretches everything, top-right and bottom left
+	//projectionMatrixAsVector._22 += amountToZoom * cosf(yawRadians);//Stretches everything, top-bottom
+	projectionMatrixAsVector._22 += amountToZoom;// *sinf(pitchRadians);//Stretches everything, top-bottom
+	//projectionMatrixAsVector._23 -= amountToZoom * cosf(yawRadians);//+ flattens everything (with black bars on top and bottom of screen). - is no more useful
+	//projectionMatrixAsVector._24 += amountToZoom * cosf(yawRadians);//Untested.
+	
+	//projectionMatrixAsVector._31 += amountToZoom * cosf(yawRadians);//stretches everything on left-hand side
+	//projectionMatrixAsVector._32 += amountToZoom * cosf(yawRadians);distorts top/bottom
+	//projectionMatrixAsVector._33 += amountToZoom * cosf(yawRadians);//Untested.
+	//projectionMatrixAsVector._34 += amountToZoom * cosf(yawRadians);//Untested.
+
+	//projectionMatrixAsVector._41 += amountToZoom * cosf(yawRadians);//Untested.
+	//projectionMatrixAsVector._42 += amountToZoom * cosf(yawRadians);//Untested.
+	//projectionMatrixAsVector._43 -= amountToZoom * cosf(yawRadians);//changes shrinks skybox, do not use
+	//projectionMatrixAsVector._44 += amountToZoom * cosf(yawRadians);//Untested.
+
+	projectionMatrix = XMLoadFloat4x4(&projectionMatrixAsVector);
 
 	// Clear the buffers to begin the scene.
 	Direct3D->BeginScene(0.0f, 0.0f, 0.0f, 1.0f);
@@ -520,15 +925,72 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 
 	// Reset the world matrix.
 	Direct3D->GetWorldMatrix(worldMatrix);
+	translationMatrix = XMMatrixTranslation(m_WindowPane->getPosition()->x, m_WindowPane->getPosition()->y, m_WindowPane->getPosition()->z);
+	worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
 	m_WindowPane->Render(Direct3D->GetDeviceContext());
 	result = ShaderManager->RenderGlassShader(Direct3D->GetDeviceContext(), m_WindowPane->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_WindowPane->GetTexture(),
-		m_WindowPane->GetNormalMap(), TextureManager->GetTexture(0), m_WindowPane->m_refractionScale);
+		m_WindowPane->GetNormalMap(), m_RenderTexture->GetShaderResourceView(), m_WindowPane->m_refractionScale);
+	//result = ShaderManager->RenderTextureShader(Direct3D->GetDeviceContext(), m_WindowPane->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_WindowPane->GetTexture());
 	if (!result)
 	{
 		return false;
 	}
 
+	for each (BulletClass* b in m_projectiles)
+	{
+		Direct3D->GetWorldMatrix(worldMatrix);
+		translationMatrix = XMMatrixTranslation(b->getPosition()->x, b->getPosition()->y, b->getPosition()->z);
+		XMFLOAT3* rotationMatrix = b->getRotation();
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationX((rotationMatrix->x * XM_PI / 180) + XM_PIDIV2));
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationY(rotationMatrix->y * XM_PI / 180));
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixScaling(m_bulletSizeCorrection, m_bulletSizeCorrection, m_bulletSizeCorrection));
+		worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
+		//Probably going to need to apply scaling.
+		b->Render(Direct3D->GetDeviceContext());
+		result = ShaderManager->RenderLightShader(Direct3D->GetDeviceContext(), b->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+			m_WindowPane->GetTexture(), m_Light->GetDirection(), m_Light->GetDiffuseColor());
+		if (!result)
+		{
+			return false;
+		}
+	}
 
+	Direct3D->GetWorldMatrix(worldMatrix);
+
+	for each (BatSpawner* bs in m_spawners)
+	{
+		translationMatrix = XMMatrixTranslation(bs->getPosition()->x, bs->getPosition()->y, bs->getPosition()->z);
+		worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
+		//Probably going to need to apply scaling.
+		bs->Render(Direct3D->GetDeviceContext());
+		result = ShaderManager->RenderLightShader(Direct3D->GetDeviceContext(), bs->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+			m_WindowPane->GetTexture(), m_Light->GetDirection(), m_Light->GetDiffuseColor());
+		if (!result)
+		{
+			return false;
+		}
+		Direct3D->GetWorldMatrix(worldMatrix);
+	}
+
+	for each (Bat* b in m_enemies)
+	{
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationX(b->getRotation()->x));
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationY(b->getRotation()->y));
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationZ(b->getRotation()->z));
+		translationMatrix = XMMatrixTranslation(b->getPosition()->x, b->getPosition()->y, b->getPosition()->z);
+		worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
+		//Probably going to need to apply scaling.
+		b->getModel()->Render(Direct3D->GetDeviceContext());
+		result = ShaderManager->RenderFireShader(Direct3D->GetDeviceContext(), b->getModel()->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+			b->getModel()->GetTexture1(), b->getModel()->GetTexture2(), b->getModel()->GetTexture3(), frameTime, scrollSpeeds,
+			scales, distortion1, distortion2, distortion3, distortionScale, distortionBias);
+		
+		if (!result)
+		{
+			return false;
+		}
+		Direct3D->GetWorldMatrix(worldMatrix);
+	}
 
 	// Render the terrain cells (and cell lines if needed).
 	for(i=0; i<m_Terrain->GetCellCount(); i++)
@@ -574,6 +1036,18 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 		return false;
 	}
 
+	//// Reset the world matrix.
+	//Direct3D->GetWorldMatrix(worldMatrix);
+	//translationMatrix = XMMatrixTranslation(m_BubbleSkull->position.x, m_BubbleSkull->position.y, m_BubbleSkull->position.z);
+	//worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
+	//m_BubbleSkull->Render(Direct3D->GetDeviceContext());
+	//result = ShaderManager->RenderBubbleShader(Direct3D->GetDeviceContext(), m_BubbleSkull->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+	//	m_BubbleSkull->GetTexture1(), m_BubbleSkull->GetTexture2(), m_Camera->GetPosition());
+	//if (!result)
+	//{
+	//	return false;
+	//}
+
 	// Reset the world matrix.
 	Direct3D->GetWorldMatrix(worldMatrix);
 
@@ -585,7 +1059,7 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 
 	// Update the render counts in the UI.
 	result = m_UserInterface->UpdateRenderCounts(Direct3D->GetDeviceContext(), m_Terrain->GetRenderCount(), m_Terrain->GetCellsDrawn(), 
-												 m_Terrain->GetCellsCulled());
+												 m_Terrain->GetCellsCulled(), m_health, m_score, m_ammo, m_ammoCap, m_enemies.size() );
 	if(!result)
 	{
 		return false;
@@ -605,4 +1079,152 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 	Direct3D->EndScene();
 
 	return true;
+}
+
+bool ZoneClass::isUnderground(XMFLOAT3* point)
+{
+	float yCoord;
+	m_Terrain->GetHeightAtPosition(point->x, point->z, yCoord);
+	if (point->y < yCoord)
+		return true;
+	return false;
+}
+
+void ZoneClass::zoom()
+{
+	m_zooming = true;
+}
+
+void ZoneClass::unZoom()
+{
+	m_zooming = false;
+}
+
+void ZoneClass::adjustZoom(float frameTime)
+{
+	if (m_zooming && m_zoomState < m_timeToZoom)
+	{
+		m_zoomState += frameTime;
+		if (m_timeToZoom < m_zoomState)
+			m_zoomState = m_timeToZoom;
+	}
+	else if (m_zoomState > 0 && !m_zooming)
+	{
+		m_zoomState -= frameTime;
+		if (0 > m_zoomState)
+			m_zoomState = 0;
+	}
+}
+
+void ZoneClass::fire(ID3D11Device* device, ID3D11DeviceContext* context)
+{
+	if (m_ammo > 0 && m_timeSinceLastShot >= m_timeBetweenShots)
+	{
+		m_ammo -= 1;
+		//Fire a new projectile, add it to the list of projectiles.
+		BulletClass* newBullet = new BulletClass;
+		XMFLOAT3 positionAsVector = m_Camera->GetPosition();
+		XMFLOAT3 rotationAsVector = m_Camera->GetRotation();
+		//newBullet->Initialize(device, context, "../Project/data/models/Bullet.txt", "../Project/data/models/BulletColour.dds", "../Project/data/models/BulletColour.dds", 
+		//	&positionAsVector, &rotationAsVector, m_shotPower);
+		newBullet->InitializeWithModel(m_bulletModel, &positionAsVector, &rotationAsVector, m_shotPower);
+		m_projectiles.push_back(newBullet);
+		m_shootingAudio->playFor(1);
+		m_timeSinceLastShot = m_timeBetweenShots;
+	}
+}
+
+void ZoneClass::checkAllCollisions()
+{
+
+}
+
+void ZoneClass::spawnObjectives(int amountToSpawn)
+{
+}
+
+void ZoneClass::incrementScore(int score)
+{
+	m_score += score;
+	//To change things past milestones do it here.
+}
+
+void ZoneClass::tickBatSpawners(D3DClass* Direct3D, float timePassed)
+{
+	if (m_timeToSpawnBat > 0 && m_enemies.size() < m_maxBats)
+	{
+		m_timeToSpawnBat -= timePassed;
+		if (m_timeToSpawnBat < 0)
+		{
+			m_timeToSpawnBat = m_timeBetweenSpawns;
+			spawnBats(1);
+		}
+	}
+}
+
+void ZoneClass::spawnNewObjectives(int numberToSpawn)
+{
+	//RNG the X and Z coordinates, find the y
+}
+
+bool ZoneClass::spawnBats(int amountToSpawn)
+{
+	bool result = true;
+	Bat* newBat = 0;
+	for (int i = 0; i < amountToSpawn; i++)
+	{
+		//Spawn and initialize the bats
+		if (m_lastSpawnerUsed >= m_spawners.size())
+		{
+			m_lastSpawnerUsed = 0;
+			newBat = m_spawners.front()->spawnBatWithModel(m_fireBatModel, this, m_batZone);
+		}
+		else
+		{
+			list<BatSpawner*>::iterator batSpawnIter = m_spawners.begin();
+			advance(batSpawnIter, m_lastSpawnerUsed);
+			BatSpawner* spawnerPtr = *batSpawnIter;
+			newBat = spawnerPtr->spawnBatWithModel(m_fireBatModel, this, m_batZone);
+		}
+		m_enemies.push_back(newBat);
+	}
+	if (!newBat)
+		return false;
+	return result;
+}
+
+float ZoneClass::getAngleMovement()
+{
+	if (m_Position->isGrounded())
+	{
+		float posX, posY, posZ;
+		m_Position->GetPosition(posX, posY, posZ);
+		float diffX = m_lastFramePosition->x - posX;
+		float diffY = m_lastFramePosition->y - posY;
+		float diffZ = m_lastFramePosition->z - posZ;
+		float diffXZ = sqrt(pow(diffX, 2) + pow(diffZ, 2));//Pythagorus.
+		return atan(diffY / diffXZ) * 180 / XM_PI;
+	}
+	return 0.0f;
+}
+
+void ZoneClass::tickFiring(float frameTime)
+{
+	if (m_timeSinceLastShot < m_timeBetweenShots)
+	{
+		m_timeSinceLastShot += frameTime;
+	}
+	if (m_ammo < m_ammoCap)
+	{
+		m_timeUntilNextAmmoDrop -= frameTime;
+		if (m_timeUntilNextAmmoDrop < 0)
+		{
+			m_ammo += 1;
+			m_timeUntilNextAmmoDrop = m_timeBetweenAmmoDrops;
+		}
+	}
+}
+
+void ZoneClass::checkObjectiveWave()
+{
 }

@@ -47,17 +47,21 @@ public:
 	SoundClass();
 	SoundClass(const SoundClass&);
 	~SoundClass();
-	bool Initialize(HWND);
+	bool Initialize(HWND, char*, bool);
 	void Shutdown();
+	bool playFor(float);
+	void tick(float);
+
+	bool repeating;
 
 private:
 	bool InitializeDirectSound(HWND);
 	void ShutdownDirectSound();
+	bool PlayWaveFile(); 
 
 	bool LoadWaveFile(char*, IDirectSoundBuffer8**);
 	void ShutdownWaveFile(IDirectSoundBuffer8**);
-
-	bool PlayWaveFile();
+	float timeRemaining, soundClipTimeLength;
 
 private:
 	IDirectSound8* m_DirectSound;

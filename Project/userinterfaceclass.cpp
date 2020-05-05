@@ -11,6 +11,7 @@ UserInterfaceClass::UserInterfaceClass()
 	m_VideoStrings = 0;
 	m_PositionStrings = 0;
 	m_RenderCountStrings = 0;
+	m_GameStrings = 0;
 	m_MiniMap = 0;
 }
 
@@ -187,6 +188,36 @@ bool UserInterfaceClass::Initialize(D3DClass* Direct3D, int screenHeight, int sc
 		return false; 
 	}
 
+	m_GameStrings = new TextClass[4];
+	// Initialize the game info strings.
+	result = m_GameStrings[0].Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), screenWidth, screenHeight, 32, false, m_Font1,
+		"Health: 0", 10, 320, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		return false;
+	}
+
+	result = m_GameStrings[1].Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), screenWidth, screenHeight, 32, false, m_Font1,
+		"Score: 0", 10, 340, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		return false;
+	}
+
+	result = m_GameStrings[2].Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), screenWidth, screenHeight, 32, false, m_Font1,
+		"Ammo: 0/0", 10, 360, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		return false;
+	}
+
+	result = m_GameStrings[3].Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), screenWidth, screenHeight, 32, false, m_Font1,
+		"Enemy count: 0", 10, 380, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		return false;
+	}
+
 	// Create the mini-map object.
 	m_MiniMap = new MiniMapClass;
 	if(!m_MiniMap)
@@ -224,6 +255,16 @@ void UserInterfaceClass::Shutdown()
 
 		delete [] m_RenderCountStrings;
 		m_RenderCountStrings = 0;
+	}
+
+	if (m_GameStrings)
+	{
+		m_GameStrings[0].Shutdown();
+		m_GameStrings[1].Shutdown();
+		m_GameStrings[2].Shutdown();
+
+		delete[] m_GameStrings;
+		m_GameStrings = 0;
 	}
 
 	// Release the position text strings.
@@ -326,6 +367,12 @@ bool UserInterfaceClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderMa
 	for(i=0; i<3; i++)
 	{
 		m_RenderCountStrings[i].Render(Direct3D->GetDeviceContext(), ShaderManager, worldMatrix, viewMatrix, orthoMatrix, m_Font1->GetTexture());
+	}
+
+	// Render the strings for gameplay.
+	for (i = 0; i < 4; i++)
+	{
+		m_GameStrings[i].Render(Direct3D->GetDeviceContext(), ShaderManager, worldMatrix, viewMatrix, orthoMatrix, m_Font1->GetTexture());
 	}
 
 	// Turn off alpha blending now that the text has been rendered.
@@ -492,9 +539,10 @@ bool UserInterfaceClass::UpdatePositionStrings(ID3D11DeviceContext* deviceContex
 }
 
 
-bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* deviceContext, int renderCount, int nodesDrawn, int nodesCulled)
+bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* deviceContext, int renderCount, int nodesDrawn, int nodesCulled, int health, int score, int ammo, int maxAmmo, int enemyCount)
 {
 	char tempString[32];
+	char tempString2[32];
 	char finalString[32];
 	bool result;
 
@@ -537,6 +585,66 @@ bool UserInterfaceClass::UpdateRenderCounts(ID3D11DeviceContext* deviceContext, 
 	// Update the sentence vertex buffer with the new string information.
 	result = m_RenderCountStrings[2].UpdateSentence(deviceContext, m_Font1, finalString, 10, 300, 1.0f, 1.0f, 1.0f);
 	if(!result)
+	{
+		return false;
+	}
+
+
+	// Convert the render count integer to string format.
+	_itoa_s(health, tempString, 10);
+
+	// Setup the cells drawn string.
+	strcpy_s(finalString, "Health: ");
+	strcat_s(finalString, tempString);
+
+	// Update the sentence vertex buffer with the new string information.
+	result = m_GameStrings[0].UpdateSentence(deviceContext, m_Font1, finalString, 10, 320, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Convert the render count integer to string format.
+	_itoa_s(score, tempString, 10);
+
+	// Setup the cells drawn string.
+	strcpy_s(finalString, "Score: ");
+	strcat_s(finalString, tempString);
+
+	// Update the sentence vertex buffer with the new string information.
+	result = m_GameStrings[1].UpdateSentence(deviceContext, m_Font1, finalString, 10, 340, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Convert the render count integer to string format.
+	_itoa_s(ammo, tempString, 10);
+	_itoa_s(maxAmmo, tempString2, 10);
+
+	// Setup the cells drawn string.
+	strcpy_s(finalString, "Ammo: ");
+	strcat_s(finalString, tempString);
+	strcat_s(finalString, "/");
+	strcat_s(finalString, tempString2);
+
+	// Update the sentence vertex buffer with the new string information.
+	result = m_GameStrings[2].UpdateSentence(deviceContext, m_Font1, finalString, 10, 360, 1.0f, 1.0f, 1.0f);
+	if (!result)
+	{
+		return false;
+	}
+
+	// Convert the render count integer to string format.
+	_itoa_s(enemyCount, tempString, 10);
+
+	// Setup the cells drawn string.
+	strcpy_s(finalString, "Number of enemies: ");
+	strcat_s(finalString, tempString);
+
+	// Update the sentence vertex buffer with the new string information.
+	result = m_GameStrings[3].UpdateSentence(deviceContext, m_Font1, finalString, 10, 380, 1.0f, 1.0f, 1.0f);
+	if (!result)
 	{
 		return false;
 	}

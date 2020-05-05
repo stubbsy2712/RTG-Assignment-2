@@ -71,6 +71,9 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\DirectX9OnlyInclude;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Program Files %28x86%29\Microsoft DirectX SDK %28June 2010%29\DirectX9OnlyLib\x86;$(LibraryPath)</LibraryPath>
+    <SourcePath>C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\DirectX9OnlyRuntime\x86;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -93,6 +96,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3dx9.lib;D3D9.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Microsoft DirectX SDK (June 2010)\DirectX9OnlyLib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -143,10 +148,15 @@
   <ItemGroup>
     <ClInclude Include="applicationclass.h" />
     <ClInclude Include="BaseModelClass.h" />
+    <ClInclude Include="Bat.h" />
+    <ClInclude Include="BatSpawner.h" />
     <ClInclude Include="bitmapclass.h" />
     <ClInclude Include="bubblemodelclass.h" />
     <ClInclude Include="bubbleshaderclass.h" />
+    <ClInclude Include="BulletClass.h" />
+    <ClInclude Include="bumpmapshaderclass.h" />
     <ClInclude Include="cameraclass.h" />
+    <ClInclude Include="Collidable.h" />
     <ClInclude Include="colorshaderclass.h" />
     <ClInclude Include="d3dclass.h" />
     <ClInclude Include="DDSTextureLoader.h" />
@@ -160,7 +170,11 @@
     <ClInclude Include="inputclass.h" />
     <ClInclude Include="lightclass.h" />
     <ClInclude Include="lightshaderclass.h" />
+    <ClInclude Include="lightspecularshaderclass.h" />
     <ClInclude Include="minimapclass.h" />
+    <ClInclude Include="modelclass.h" />
+    <ClInclude Include="ObjectiveClass.h" />
+    <ClInclude Include="PlayerManager.h" />
     <ClInclude Include="positionclass.h" />
     <ClInclude Include="rendertextureclass.h" />
     <ClInclude Include="shadermanagerclass.h" />
@@ -183,10 +197,15 @@
   <ItemGroup>
     <ClCompile Include="applicationclass.cpp" />
     <ClCompile Include="BaseModelClass.cpp" />
+    <ClCompile Include="Bat.cpp" />
+    <ClCompile Include="BatSpawner.cpp" />
     <ClCompile Include="bitmapclass.cpp" />
     <ClCompile Include="BubbleModelClass.cpp" />
     <ClCompile Include="bubbleshaderclass.cpp" />
+    <ClCompile Include="BulletClass.cpp" />
+    <ClCompile Include="bumpmapshaderclass.cpp" />
     <ClCompile Include="cameraclass.cpp" />
+    <ClCompile Include="Collidable.cpp" />
     <ClCompile Include="colorshaderclass.cpp" />
     <ClCompile Include="d3dclass.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
@@ -200,8 +219,12 @@
     <ClCompile Include="inputclass.cpp" />
     <ClCompile Include="lightclass.cpp" />
     <ClCompile Include="lightshaderclass.cpp" />
+    <ClCompile Include="lightspecularshaderclass.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="minimapclass.cpp" />
+    <ClCompile Include="modelclass.cpp" />
+    <ClCompile Include="ObjectiveClass.cpp" />
+    <ClCompile Include="PlayerManager.cpp" />
     <ClCompile Include="positionclass.cpp" />
     <ClCompile Include="rendertextureclass.cpp" />
     <ClCompile Include="shadermanagerclass.cpp" />
@@ -224,6 +247,8 @@
   <ItemGroup>
     <None Include="bubbleshader.ps" />
     <None Include="bubbleshader.vs" />
+    <None Include="bumpmap.ps" />
+    <None Include="bumpmap.vs" />
     <None Include="color.ps" />
     <None Include="color.vs" />
     <None Include="font.ps" />

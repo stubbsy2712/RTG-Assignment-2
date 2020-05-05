@@ -287,6 +287,16 @@ int InputClass::GetMouseYDelta()
 	return MouseYDelta;
 }
 
+bool InputClass::isLeftMouseDown()
+{
+	return (DIMOUSE_BUTTON1 & 0x80);
+}
+
+bool InputClass::isRightMouseDown()
+{
+	return (DIMOUSE_BUTTON2 & 0x80);
+}
+
 int InputClass::GetMouseX()
 {
 	return m_mouseX;
@@ -421,6 +431,47 @@ bool InputClass::IsZPressed()
 	return false;
 }
 
+bool InputClass::IsQPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_Q] & 0x80)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool InputClass::IsEPressed()
+{
+	// Do a bitwise and on the keyboard state to check if the escape key is currently being pressed.
+	if (m_keyboardState[DIK_E] & 0x80)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool InputClass::IsSpacePressed()
+{
+	if (m_keyboardState[DIK_SPACE] & 0x80)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool InputClass::IsShiftPressed()
+{
+	if (m_keyboardState[DIK_LSHIFT] & 0x80)
+	{
+		return true;
+	}
+
+	return false;
+}
 
 bool InputClass::IsPgUpPressed()
 {
