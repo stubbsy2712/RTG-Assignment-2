@@ -46,6 +46,9 @@ public:
 	XMFLOAT4 GetApexColor();
 	XMFLOAT4 GetCenterColor();
 
+	void SetApexColour(XMFLOAT4);
+	void SetCenterColour(XMFLOAT4);
+
 private:
 	bool LoadSkyDomeModel(char*);
 	void ReleaseSkyDomeModel();

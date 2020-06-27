@@ -63,16 +63,17 @@ private:
 
 	bool m_inAir;
 	bool m_sprinting;
-	float m_sprintMultiplier, m_sprintBarCurrent, m_sprintBarMax;
+	float m_sprintMultiplier = 1.7f;
+	float m_sprintBarCurrent, m_sprintBarMax;
 	float m_height = 2;
-	float m_jumpPower = 3;
+	float m_jumpPower = 4.5f;
 	float m_frameTime;
 	float m_turningDecel, m_moveDecel;
 	float m_turningAccel, m_moveAccel;
 	float m_turningSpeedX, m_turningSpeedY;
 	
+	float m_distanceBetweenFootsteps = 0.6f;
 	float m_distanceUntilFootstep = m_distanceBetweenFootsteps;
-	float m_distanceBetweenFootsteps = 0.5f;
 	float m_gravityValue = 9.8f;
 	float m_terminalYVelocity = 0.3f;
 	float m_terminalXVelocity = 0.3f;

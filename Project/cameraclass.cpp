@@ -176,3 +176,48 @@ void CameraClass::GetBaseViewMatrix(XMMATRIX& viewMatrix)
 	viewMatrix = m_baseViewMatrix;
 	return;
 }
+
+void CameraClass::RenderReflection(float height)
+{
+	//D3DXVECTOR3 up, position, lookAt;
+	XMVECTOR up, position, lookAt;
+	float radians;
+	   
+	// Setup the vector that points upwards.
+	//up.x = 0.0f;
+	//up.y = 1.0f;
+	//up.z = 0.0f;
+
+	up = XMVectorSet(0, 1, 0, 0);
+
+	// Setup the position of the camera in the world.
+	// For planar reflection invert the Y position of the camera.
+
+	//position.x = m_positionX;
+	//position.y = -m_positionY + (height * 2.0f);
+	//position.z = m_positionZ;
+
+	position = XMVectorSet(m_positionX, -m_positionY + (height * 2.0f), m_positionZ, 0);
+
+	// Calculate the rotation in radians.
+	radians = m_rotationY * 0.0174532925f;
+
+	// Setup where the camera is looking.
+
+	//lookAt.x = sinf(radians) + m_positionX;
+	//lookAt.y = position.y;
+	//lookAt.z = cosf(radians) + m_positionZ;
+
+	lookAt = XMVectorSet(sinf(radians) + m_positionX, -m_positionY + (height * 2.0f), cosf(radians) + m_positionZ, 0);
+
+	// Create the view matrix from the three vectors.
+	m_reflectionViewMatrix = XMMatrixLookAtLH(position, lookAt, up);
+	//D3DXMatrixLookAtLH(&m_reflectionViewMatrix, &position, &lookAt, &up);
+
+	return;
+}
+
+XMMATRIX CameraClass::GetReflectionViewMatrix()
+{
+	return m_reflectionViewMatrix;
+}

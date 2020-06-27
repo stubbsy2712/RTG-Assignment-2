@@ -14,7 +14,8 @@ ShaderManagerClass::ShaderManagerClass()
 	m_TerrainShader = 0;
 	m_FireShader = 0;
 	m_GlassShader = 0;
-	m_BubbleShader = 0;
+	m_ReflectionShader = 0;
+	//m_BubbleShader = 0;
 }
 
 
@@ -28,9 +29,20 @@ ShaderManagerClass::~ShaderManagerClass()
 }
 
 
-bool ShaderManagerClass::Initialize(ID3D11Device* device, IDirect3DDevice9* device9, HWND hwnd)
+bool ShaderManagerClass::Initialize(ID3D11Device* device, HWND hwnd)
 {
 	bool result;
+
+	m_ReflectionShader = new ReflectionShaderClass;
+	if (!m_ReflectionShader)
+	{
+		return false;
+	}
+	result = m_ReflectionShader->Initialize(device, hwnd);
+	if (!result)
+	{
+		return false;
+	}
 
 	//m_BubbleShader = new BubbleShaderClass;
 	//if (!m_BubbleShader)
@@ -153,12 +165,34 @@ bool ShaderManagerClass::Initialize(ID3D11Device* device, IDirect3DDevice9* devi
 		return false;
 	}
 
+	// Create the reflection shader object.
+	m_ReflectionShader = new ReflectionShaderClass;
+	if (!m_ReflectionShader)
+	{
+		return false;
+	}
+
+	// Initialize the reflection shader object.
+	result = m_ReflectionShader->Initialize(device, hwnd);
+	if (!result)
+	{
+		return false;
+	}
+
 	return true;
 }
 
 
 void ShaderManagerClass::Shutdown()
 {
+	//Release the reflection shader object.
+	if (m_ReflectionShader)
+	{
+		m_ReflectionShader->Shutdown();
+		delete m_ReflectionShader;
+		m_ReflectionShader = 0;
+	}
+
 	// Release the fire shader object.
 	if (m_FireShader)
 	{
@@ -278,11 +312,17 @@ bool ShaderManagerClass::RenderGlassShader(ID3D11DeviceContext* deviceContext, i
 	return m_GlassShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, colorTexture, normalTexture, refractionTexture, refractionScale);
 }
 
-bool ShaderManagerClass::RenderBubbleShader(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix,
-	const XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* colourTexture, ID3D11ShaderResourceView* filmTexture, const XMFLOAT3& cameraPosition)
+bool ShaderManagerClass::RenderReflectionShader(ID3D11DeviceContext* deviceContext, int indexCount, XMMATRIX worldMatrix, XMMATRIX viewMatrix,
+	XMMATRIX projectionMatrix, ID3D11ShaderResourceView* modelTex, ID3D11ShaderResourceView* refTex, XMMATRIX refMat)
 {
-	return m_BubbleShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, colourTexture, filmTexture, cameraPosition);
+	return m_ReflectionShader->Render(deviceContext, indexCount,worldMatrix, viewMatrix, projectionMatrix, modelTex, refTex, refMat);
 }
+
+//bool ShaderManagerClass::RenderBubbleShader(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix,
+//	const XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* colourTexture, ID3D11ShaderResourceView* filmTexture, const XMFLOAT3& cameraPosition)
+//{
+//	return m_BubbleShader->Render(deviceContext, indexCount, worldMatrix, viewMatrix, projectionMatrix, colourTexture, filmTexture, cameraPosition);
+//}
 
 bool ShaderManagerClass::RenderTerrainShader(ID3D11DeviceContext* deviceContext, int indexCount, const XMMATRIX& worldMatrix, const XMMATRIX& viewMatrix,
 											 const XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* texture, ID3D11ShaderResourceView* normalMap,

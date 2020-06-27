@@ -3,9 +3,9 @@
 Bat* BatSpawner::spawnBatWithModel(FireModelClass* batModel, ZoneClass* zone, CuboidZone* flyZone)
 {
 	Bat* batPtr = new Bat();
-	batPtr->InitializeWithModel(batModel, zone, flyZone);
-	batPtr->setPosition(m_position->x, m_position->y, m_position->z);
+	batPtr->setPosition(m_position->x, m_position->y + 3, m_position->z);
 	batPtr->setRotation(m_rotation->x, m_rotation->y, m_rotation->z);
+	batPtr->InitializeWithModel(batModel, zone, flyZone);
 	batPtr->m_xSize = 2;
 	batPtr->m_ySize = 1;
 	batPtr->m_zSize = 2;
@@ -40,6 +40,11 @@ void BatSpawner::Render(ID3D11DeviceContext* context)
 XMFLOAT3* BatSpawner::getPosition()
 {
 	return m_position;
+}
+
+WindowModelClass* BatSpawner::getModel()
+{
+	return m_model;
 }
 
 int BatSpawner::GetIndexCount()

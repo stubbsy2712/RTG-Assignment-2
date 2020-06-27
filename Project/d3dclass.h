@@ -16,7 +16,7 @@
 //////////////
 // INCLUDES //
 //////////////
-#include <d3d9.h>
+//#include <d3d9.h>
 #include <d3d11.h>
 #include <directxmath.h>
 using namespace DirectX;
@@ -39,7 +39,8 @@ public:
 
 	ID3D11Device* GetDevice();
 	ID3D11DeviceContext* GetDeviceContext();
-	IDirect3DDevice9* GetDevice9();
+	ID3D11DepthStencilView* GetDepthStencilView();
+	//IDirect3DDevice9* GetDevice9();
 
 	void GetProjectionMatrix(XMMATRIX&);
 	void GetWorldMatrix(XMMATRIX&);
@@ -60,13 +61,15 @@ public:
 	void EnableWireframe();
 	void DisableWireframe();
 
+	void SetBackBufferRenderTarget();
+
 private:
 	bool m_vsync_enabled;
 	int m_videoCardMemory;
 	char m_videoCardDescription[128];
 	IDXGISwapChain* m_swapChain;
 	ID3D11Device* m_device;
-	IDirect3DDevice9* m_device9;
+	//IDirect3DDevice9* m_device9;
 	ID3D11DeviceContext* m_deviceContext;
 	ID3D11RenderTargetView* m_renderTargetView;
 	ID3D11Texture2D* m_depthStencilBuffer;

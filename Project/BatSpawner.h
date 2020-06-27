@@ -17,6 +17,7 @@ public:
 	void setPosition(XMFLOAT3*);
 	void Render(ID3D11DeviceContext*);
 	XMFLOAT3* getPosition();
+	WindowModelClass* getModel();
 	int GetIndexCount();
 private:
 	WindowModelClass* m_model;

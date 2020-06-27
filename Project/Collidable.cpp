@@ -16,8 +16,11 @@ void Collidable::checkColliisonAABB(BoundingBox* otherBox, ZoneClass* zone)
 	}
 }
 
-void Collidable::checkCollisionWithBullet(XMFLOAT3*, ZoneClass*)
+bool Collidable::checkCollisionWithBullet(XMFLOAT3* bulletLocation, ZoneClass*)
 {
+	if (m_boundingBox->isInZone(bulletLocation))
+		return true;
+	return false;
 }
 
 void Collidable::forceCollision(ZoneClass* zone)
@@ -44,13 +47,13 @@ void Collidable::calculateBoundingBox()
 
 void Collidable::setPosition(float newX, float newY, float newZ)
 {
-	delete m_position;
+	//delete m_position;
 	m_position = new XMFLOAT3(newX, newY, newZ);
 }
 
 void Collidable::setRotation(float newX, float newY, float newZ)
 {
-	delete m_rotation;
+	//delete m_rotation;
 	m_rotation = new XMFLOAT3(newX, newY, newZ);
 }
 

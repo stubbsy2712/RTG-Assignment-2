@@ -32,7 +32,6 @@ PositionClass::PositionClass()
 	m_turningAccel = 2.5f;
 	//m_jumpPower = 0.5f;
 
-	m_sprintMultiplier = 2;
 	m_sprintBarCurrent = 10;
 	m_sprintBarMax = 10;
 }
@@ -565,9 +564,16 @@ void PositionClass::SetFootstepSound(SoundClass* sound)
 
 void PositionClass::updateFootstep()
 {
-	m_distanceUntilFootstep -= m_frameTime * abs((long)m_xMomentum);
-	m_distanceUntilFootstep -= m_frameTime * abs((long)m_yMomentum);
-	m_distanceUntilFootstep -= m_frameTime * abs((long)m_zMomentum);
+	if (m_xMomentum > 0)
+		m_distanceUntilFootstep -= m_frameTime * m_xMomentum;
+	else
+		m_distanceUntilFootstep += m_frameTime * m_xMomentum;
+
+	if (m_zMomentum > 0)
+		m_distanceUntilFootstep -= m_frameTime * m_zMomentum;
+	else
+		m_distanceUntilFootstep += m_frameTime * m_zMomentum;
+
 	if (m_distanceUntilFootstep < 0)
 	{
 		m_distanceUntilFootstep = m_distanceBetweenFootsteps;
@@ -605,6 +611,16 @@ void PositionClass::applyMovement()
 		m_positionX += m_xMomentum * m_sprintMultiplier;
 		m_positionY += m_yMomentum * m_sprintMultiplier;
 		m_positionZ += m_zMomentum * m_sprintMultiplier;
+
+		if (m_xMomentum > 0)
+			m_distanceUntilFootstep -= (m_sprintMultiplier - 1) * m_xMomentum;
+		else
+			m_distanceUntilFootstep += (m_sprintMultiplier - 1) * m_xMomentum;
+
+		if (m_zMomentum > 0)
+			m_distanceUntilFootstep -= (m_sprintMultiplier - 1) * m_zMomentum;
+		else
+			m_distanceUntilFootstep += (m_sprintMultiplier - 1) * m_zMomentum;
 	}
 	else
 	{

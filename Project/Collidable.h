@@ -42,8 +42,9 @@ class Collidable
 public:
 	virtual void checkCollisionPoint(XMFLOAT3*, ZoneClass*);
 	virtual void checkColliisonAABB(BoundingBox*, ZoneClass*);
-	virtual void checkCollisionWithBullet(XMFLOAT3*, ZoneClass*);
+	virtual bool checkCollisionWithBullet(XMFLOAT3*, ZoneClass*);
 	virtual void forceCollision(ZoneClass*);
+	virtual void pushToPreviousPosition();
 	virtual void updatePrevPosition();
 	
 	void calculateBoundingBox();
@@ -61,7 +62,6 @@ protected:
 	BoundingBox* m_boundingBox = new BoundingBox();
 	XMFLOAT3* m_previousPosition = new XMFLOAT3();
 	virtual void collisionOccured(ZoneClass*);
-	void pushToPreviousPosition();
 	XMFLOAT3* m_position = new XMFLOAT3(0, 0, 0);
 	XMFLOAT3* m_rotation = new XMFLOAT3(0, 0, 0);//Stores in terms of radians.
 };

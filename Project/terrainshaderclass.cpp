@@ -411,7 +411,10 @@ bool TerrainShaderClass::SetShaderParameters(ID3D11DeviceContext* deviceContext,
 	dataPtr2 = (LightBufferType*)mappedResource.pData;
 
 	// Copy the lighting variables into the constant buffer.
+	
 	dataPtr2->diffuseColor = diffuseColor;
+	//dataPtr2->diffuseColor = XMFLOAT4(0, 0, 0, 1);
+
 	dataPtr2->lightDirection = lightDirection;
 	dataPtr2->padding = 0.0f;
 

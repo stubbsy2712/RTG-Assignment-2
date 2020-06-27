@@ -1,14 +1,20 @@
 #pragma once
-#include "bubblemodelclass.h"
-class ObjectiveClass
+#include "modelclass.h"
+#include <d3d11.h>
+#include <DirectXMath.h>
+#include "Collidable.h"
+using namespace DirectX;
+class ObjectiveClass : public Collidable
 {
 private:
-	BubbleModelClass* m_model;
-	XMFLOAT3* m_position;
+	ModelClass* m_model;
 public:
-	void initialize(BubbleModelClass*, XMFLOAT3*);
+	void initializeWithModel(ModelClass*, XMFLOAT3*);
+	ModelClass* getModel();
 	ObjectiveClass();
 	void Shutdown();
 	~ObjectiveClass();
+protected:
+	void collisionOccured(ZoneClass*);
 };
 

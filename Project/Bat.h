@@ -23,19 +23,22 @@ private:
 	CuboidZone* flyZone;
 	CuboidZone goalBounds;
 
-	float speed = 10;//units moved per second, bigger is faster.
+	float speed = 50;//units moved per second, bigger is faster.
 	float turnRate = 0.75f;//time in seconds to turn 180 degrees, or PI radians, bigger is slower.
+	float m_heightToClimb = 75;
 
 	void softRotate(float turnPower, float needToFaceX, float needToFaceY);
 	void findNewDestination();
+	void setToChasePlayer();
 	virtual void collisionOccured(ZoneClass* zone);//With player
 
 public:
 	void move(float time);
 	void shutdown();
-	FireModelClass* getModel();
+	void checkColliisonAABB(BoundingBox* otherBox, ZoneClass* zone);
 	void InitializeWithModel(FireModelClass*, ZoneClass*, CuboidZone*);
 	void checkColliisonWithBullet(XMFLOAT3*, ZoneClass*);
+	FireModelClass* getModel();
 	Bat();
 	~Bat();
 };

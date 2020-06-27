@@ -9,7 +9,7 @@ D3DClass::D3DClass()
 	m_swapChain = 0;
 	m_device = 0;
 	m_deviceContext = 0;
-	m_device9 = 0;
+	//m_device9 = 0;
 	m_renderTargetView = 0;
 	m_depthStencilBuffer = 0;
 	m_depthStencilState = 0;
@@ -219,12 +219,12 @@ bool D3DClass::Initialize(int screenWidth, int screenHeight, bool vsync, HWND hw
 		return false;
 	}
 
-	IDirect3D9* d3dobject = Direct3DCreate9(D3D_SDK_VERSION);
+	//IDirect3D9* d3dobject = Direct3DCreate9(D3D_SDK_VERSION);
 
-	D3DPRESENT_PARAMETERS d3dpresent;
-	memset(&d3dpresent, 0, sizeof(D3DPRESENT_PARAMETERS));
-	d3dpresent.Windowed = TRUE;
-	d3dpresent.SwapEffect = D3DSWAPEFFECT_DISCARD;
+	//D3DPRESENT_PARAMETERS d3dpresent;
+	//memset(&d3dpresent, 0, sizeof(D3DPRESENT_PARAMETERS));
+	//d3dpresent.Windowed = TRUE;
+	//d3dpresent.SwapEffect = D3DSWAPEFFECT_DISCARD;
 
 	//result = IDirect3D9_CreateDevice(d3d9, NULL, D3D_DRIVER_TYPE_HARDWARE, hwnd, NULL, NULL, &m_device9);
 	//result = d3dobject->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_REF, hwnd, D3DCREATE_SOFTWARE_VERTEXPROCESSING, &d3dpresent, &m_device9);
@@ -626,10 +626,15 @@ ID3D11DeviceContext* D3DClass::GetDeviceContext()
 	return m_deviceContext;
 }
 
-IDirect3DDevice9* D3DClass::GetDevice9()
+ID3D11DepthStencilView* D3DClass::GetDepthStencilView()
 {
-	return m_device9;
+	return m_depthStencilView;
 }
+
+//IDirect3DDevice9* D3DClass::GetDevice9()
+//{
+//	return m_device9;
+//}
 
 
 void D3DClass::GetProjectionMatrix(XMMATRIX& projectionMatrix)
@@ -760,6 +765,14 @@ void D3DClass::DisableWireframe()
 {
 	// Set the solid fill rasterizer state.
 	m_deviceContext->RSSetState(m_rasterState);
+
+	return;
+}
+
+void D3DClass::SetBackBufferRenderTarget()
+{
+	// Bind the render target view and depth stencil buffer to the output render pipeline.
+	m_deviceContext->OMSetRenderTargets(1, &m_renderTargetView, m_depthStencilView);
 
 	return;
 }

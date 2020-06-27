@@ -1,5 +1,6 @@
+/*
 #include "bubbleshaderclass.h" 
-#include <d3dx9shader.h>
+//#include <d3dx9shader.h>
 #include <d3dcompiler.h>
 
 BubbleShaderClass::BubbleShaderClass()
@@ -86,9 +87,9 @@ bool BubbleShaderClass::Render(ID3D11DeviceContext* deviceContext, int indexCoun
 bool BubbleShaderClass::InitializeShader(ID3D11Device* device,  IDirect3DDevice9* device9, HWND hwnd, WCHAR* vsFilename, WCHAR* psFilename)
 {
 	HRESULT result;
-	LPD3DXBUFFER* vertexShaderBuffer9;
-	LPD3DXBUFFER* pixelShaderBuffer9;
-	LPD3DXBUFFER* errorMessage9;
+	//LPD3DXBUFFER* vertexShaderBuffer9;
+	//LPD3DXBUFFER* pixelShaderBuffer9;
+	//LPD3DXBUFFER* errorMessage9;
 	ID3D10Blob* errorMessage;
 	ID3D10Blob* vertexShaderBuffer;
 	ID3D10Blob* pixelShaderBuffer;
@@ -103,9 +104,9 @@ bool BubbleShaderClass::InitializeShader(ID3D11Device* device,  IDirect3DDevice9
 	errorMessage = 0;
 	vertexShaderBuffer = 0;
 	pixelShaderBuffer = 0;
-	errorMessage9 = new LPD3DXBUFFER;
-	vertexShaderBuffer9 = new LPD3DXBUFFER;
-	pixelShaderBuffer9 = new LPD3DXBUFFER;
+	//errorMessage9 = new LPD3DXBUFFER;
+	//vertexShaderBuffer9 = new LPD3DXBUFFER;
+	//pixelShaderBuffer9 = new LPD3DXBUFFER;
 
 	// Compile the vertex shader code.
 	//psrcfile, hsrcmodule, psrcresource, psrcdata, stcdatalen
@@ -122,8 +123,10 @@ bool BubbleShaderClass::InitializeShader(ID3D11Device* device,  IDirect3DDevice9
 	//wstring wc = L"bubbleshader.ps";
 	LPCWSTR pSrcFile = L"bubbleshader.ps";
 	
+	result = -1;
+
 	// Compile the pixel shader code.
-	result = D3DXAssembleShaderFromFile(pSrcFile, NULL, NULL, NULL, pixelShaderBuffer9, errorMessage9);
+	//result = D3DXAssembleShaderFromFile(pSrcFile, NULL, NULL, NULL, pixelShaderBuffer9, errorMessage9);
 
 	if (FAILED(result))
 	{
@@ -143,7 +146,7 @@ bool BubbleShaderClass::InitializeShader(ID3D11Device* device,  IDirect3DDevice9
 
 	pSrcFile = L"bubbleshader.vs";
 
-	result = D3DXAssembleShaderFromFile(pSrcFile, NULL, NULL, NULL, vertexShaderBuffer9, errorMessage9);
+	//result = D3DXAssembleShaderFromFile(pSrcFile, NULL, NULL, NULL, vertexShaderBuffer9, errorMessage9);
 	if (FAILED(result))
 	{
 		// If the shader failed to compile it should have writen something to the error message.
@@ -541,3 +544,4 @@ void BubbleShaderClass::RenderShader(ID3D11DeviceContext* deviceContext, int ind
 
 	return;
 }
+*/

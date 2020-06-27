@@ -58,7 +58,7 @@ float4 GlassPixelShader(PixelInputType input) : SV_TARGET
     textureColor = colorTexture.Sample(SampleType, input.tex);
     
     // Evenly combine the glass color and refraction value for the final color.
-    color = lerp(refractionColor, textureColor, 0.5f);
+    color = lerp(refractionColor, textureColor, 0.25f);
 
     return color;
 }

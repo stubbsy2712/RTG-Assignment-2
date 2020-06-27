@@ -57,23 +57,24 @@ public:
 private:
 	void HandleMovementInput(InputClass*, float, D3DClass*);
 	bool Render(D3DClass*, ShaderManagerClass*, TextureManagerClass*);
-	//bool RenderToTexture(float rotation);
+	bool RenderToTexture(D3DClass*, ShaderManagerClass*, float, TextureManagerClass*);
 	bool isUnderground(XMFLOAT3*);
+	bool isUnderground(BoundingBox*);
 	
 	int m_health = 3;
 	int m_score = 0;
 
 	int m_ammoCap = 10;
 	int m_ammo = 5;
-	float m_timeBetweenAmmoDrops = 5;
+	float m_timeBetweenAmmoDrops = 7.5f;
 	float m_timeUntilNextAmmoDrop = m_timeBetweenAmmoDrops;
-	float m_shotPower = 5;
-	float m_timeSinceLastShot = 0;
-	float m_timeBetweenShots = 3;
-	float m_bulletSizeCorrection = 0.1f;
+	float m_shotPower = 75;
+
+	float m_shotCooldown = 0;
+	float m_timeBetweenShots = 1;
 
 	int m_maxBats = 5;
-	int m_batsDifficulty = 5;//Higher = easier, this is the amount of random points the bats must hit before they can hunt the player.
+	int m_batsDifficulty = 2;//Higher = easier, this is the amount of random points the bats must hit before they can hunt the player.
 	float m_timeToSpawnBat = 10;
 	float m_timeBetweenSpawns = 10;
 	int m_lastSpawnerUsed = 0;
@@ -83,10 +84,36 @@ private:
 	float m_timeToZoom = 3;
 	float m_zoomState;
 
-	float m_angleTolerance = 15;
+	float m_angleTolerance = 52.5f;
+	bool m_firstFrame = true;
 
 	double m_totalTime = 0;
 	float m_distortionTimeMultiplier = 20;
+
+	float m_cannonScale = 0.1f;
+	float m_batScale = 0.1f;
+	float m_bulletScale = 0.1f;
+	float m_objectiveScale = 0.2f;
+	float m_objectiveFloat = 2;
+
+	float m_timeOfDay = 0;
+	float m_dayCycleTime = 48;
+	bool m_timeGoingUp = true;
+
+	XMFLOAT3 m_batSize = {3,1,3};
+	XMFLOAT3 m_cannonSize = {3,5,5};
+	XMFLOAT3 m_cannonSizePerp = {5,5,3};
+	XMFLOAT3 m_windowSize = {1,1,1};
+	XMFLOAT3 m_objectiveSize = {3,3,3};
+
+	XMFLOAT4 m_apexDayColour = { 0.0f, 0.05f, 0.6f, 1.0f };
+	XMFLOAT4 m_centreDayColour = { 0.0f, 0.5f, 0.8f, 1.0f };
+
+	XMFLOAT4 m_apexNightColour = {0.0f, 0.001f, 0.005f, 0.5f};
+	XMFLOAT4 m_centreNightColour = {0.0f, 0.02f, 0.3f, 0.5f};
+
+	XMFLOAT4 m_dayLightColour = { 1, 1, 1, 1 };
+	XMFLOAT4 m_nightLightColour = {0.05f, 0.05f, 0.1f, 1};
 
 	void zoom();
 	void unZoom();
@@ -96,10 +123,13 @@ private:
 	void spawnObjectives(int);
 	void incrementScore(int);
 	void tickBatSpawners(D3DClass*, float);
-	void spawnNewObjectives(int);
+	void spawnNewObjective();
 	void tickFiring(float);
 	void checkObjectiveWave();
+	void deleteThings();
+	void tickTimeOfDay(float);
 	bool spawnBats(int);
+	bool outOfBounds(XMFLOAT3*);
 	float getAngleMovement();
 
 private:
@@ -110,17 +140,22 @@ private:
 	list<BulletClass*> m_projectiles;
 	list<BatSpawner*> m_spawners;
 
+	list<BulletClass*> m_bulletsToDelete;
+	list<Bat*> m_enemiesToDelete;
+	list<ObjectiveClass*> m_objectivesToDelete;
+
 	XMFLOAT3* m_lastFramePosition;
 
-	FireModelClass* m_CentreSkull;
+	//FireModelClass* m_CentreSkull;
 	WindowModelClass* m_WindowPane;
-	BubbleModelClass* m_BubbleSkull;
+	//BubbleModelClass* m_BubbleSkull;
 	
 	SoundClass* m_backgroundMusic;
 	SoundClass* m_footPrintAudio;
 	SoundClass* m_damageAudio;
 	SoundClass* m_batKilledAudio;
 	SoundClass* m_shootingAudio;
+	SoundClass* m_objectiveCompleteAudio;
 	
 	RenderTextureClass* m_RenderTexture;
 
@@ -128,16 +163,17 @@ private:
 	BatSpawner* m_southBatSpawner;
 	BatSpawner* m_eastBatSpawner;
 	BatSpawner* m_westBatSpawner;
-	XMFLOAT3* m_northSpawnerLocation = new XMFLOAT3(250, 100, 0);
-	XMFLOAT3* m_southSpawnerLocation = new XMFLOAT3(250, 100, 500);
-	XMFLOAT3* m_eastSpawnerLocation = new XMFLOAT3(0, 100, 250);
-	XMFLOAT3* m_westSpawnerLocation = new XMFLOAT3(500, 100, 250);
+	XMFLOAT3* m_northSpawnerLocation = new XMFLOAT3(500, 58.8f, 885);
+	XMFLOAT3* m_southSpawnerLocation = new XMFLOAT3(626, 27, 80);
+	XMFLOAT3* m_eastSpawnerLocation = new XMFLOAT3(40, 21, 500);
+	XMFLOAT3* m_westSpawnerLocation = new XMFLOAT3(999, 19, 498);
 	CuboidZone* m_batZone;
 
 	WindowModelClass* m_glassCannonModel;
 	FireModelClass* m_fireBatModel;
 	ModelClass* m_bulletModel;
-	BubbleModelClass* m_objectiveModel;
+	ModelClass* m_objectiveModel;
+	TextureClass* m_reflectionTexture;
 
 	UserInterfaceClass* m_UserInterface;
 	CameraClass* m_Camera;

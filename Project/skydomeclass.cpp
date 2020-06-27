@@ -89,6 +89,16 @@ XMFLOAT4 SkyDomeClass::GetCenterColor()
 	return m_centerColor;
 }
 
+void SkyDomeClass::SetApexColour(XMFLOAT4 newColour)
+{
+	m_apexColor = newColour;
+}
+
+void SkyDomeClass::SetCenterColour(XMFLOAT4 newColour)
+{
+	m_apexColor = newColour;
+}
+
 
 bool SkyDomeClass::LoadSkyDomeModel(char* filename)
 {

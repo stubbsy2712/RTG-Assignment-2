@@ -23,6 +23,15 @@ void Bat::shutdown()
 	}
 }
 
+void Bat::checkColliisonAABB(BoundingBox* otherBox, ZoneClass* zone)
+{
+	for each (XMFLOAT3 vert in otherBox->verts())
+	{
+		if (m_boundingBox->isInZone(&vert))
+			pushToPreviousPosition();
+	}
+}
+
 FireModelClass* Bat::getModel()
 {
 	return model;
@@ -36,7 +45,19 @@ void Bat::InitializeWithModel(FireModelClass* model, ZoneClass* zone, CuboidZone
 	playerY = zone->getPlayerPositionYPtr();
 	playerZ = zone->getPlayerPositionZPtr();
 	zonesLeft = zone->getEnemyDifficulty();
-	findNewDestination();
+
+	currentDestination->x = m_position->x + 1;
+	currentDestination->y = m_position->y + m_heightToClimb;
+	currentDestination->z = m_position->z + 1;
+
+	goalBounds.upperBound = currentDestination->y + GOAL_APPROXIMATION;
+	goalBounds.lowerBound = currentDestination->y - GOAL_APPROXIMATION;
+	goalBounds.leftBound = currentDestination->x - GOAL_APPROXIMATION;
+	goalBounds.rightBound = currentDestination->x + GOAL_APPROXIMATION;
+	goalBounds.backBound = currentDestination->z + GOAL_APPROXIMATION;
+	goalBounds.frontBound = currentDestination->z - GOAL_APPROXIMATION;
+
+	//findNewDestination();
 }
 
 void Bat::checkColliisonWithBullet(XMFLOAT3* bulletPosition, ZoneClass* zone)
@@ -151,10 +172,6 @@ void Bat::softRotate(float turnPower, float needToFaceX, float needToFaceY)
 
 void Bat::findNewDestination()
 {
-	if (zonesLeft < 1)
-	{
-		//currentDestination = playerPosition;
-	}
 	//Select random coordinates that are inside the zone of acceptable coordinates.
 	random_device rd1;
 	default_random_engine generator1(rd1());
@@ -175,7 +192,14 @@ void Bat::findNewDestination()
 	goalBounds.rightBound = currentDestination->x + GOAL_APPROXIMATION;
 	goalBounds.backBound = currentDestination->z + GOAL_APPROXIMATION;
 	goalBounds.frontBound = currentDestination->z - GOAL_APPROXIMATION;
-	zonesLeft -= 1;
+	//zonesLeft -= 1;
+}
+
+void Bat::setToChasePlayer()
+{
+	currentDestination->x = *playerX;
+	currentDestination->y = *playerY;
+	currentDestination->z = *playerZ;
 }
 
 void Bat::move(float time)
@@ -197,8 +221,12 @@ void Bat::move(float time)
 	float needToFaceX = atan(diffY / diffXZ);
 	float turnPower = (time / turnRate) * XM_PI;
 	
+	//For some reason soft rotations have stopped working like they did in the first assignment
+	//Even though I managed to fix them after that submission, somehow they just broke again?
+	
 	//softRotate(turnPower, needToFaceX, needToFaceY);
 
+	//ugli
 	m_rotation->x = needToFaceX;
 	m_rotation->y = needToFaceY;
 
@@ -223,8 +251,12 @@ void Bat::move(float time)
 	if (goalBounds.isInZone(m_position))
 	{
 		moveBy++;
-		findNewDestination();
+		zonesLeft -= 1;
+		if (zonesLeft > 0)
+			findNewDestination();
 	}
+	if (zonesLeft < 1)
+		setToChasePlayer();
 }
 
 void Bat::collisionOccured(ZoneClass* zone)

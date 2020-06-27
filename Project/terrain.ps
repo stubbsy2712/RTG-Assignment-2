@@ -61,6 +61,7 @@ float4 TerrainPixelShader(PixelInputType input) : SV_TARGET
 	float4 material2;
 	float blendAmount;
 	float4 color;
+	float4 lightColour;
 	float depthValue;
 
 
@@ -111,6 +112,10 @@ float4 TerrainPixelShader(PixelInputType input) : SV_TARGET
     {
         color = material1;
     }
+
+	lightColour = saturate(diffuseColor * lightIntensity);
+    
+	color = color * lightColour;
 
     return color;
 }

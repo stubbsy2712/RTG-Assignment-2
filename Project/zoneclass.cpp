@@ -14,12 +14,13 @@ ZoneClass::ZoneClass()
 	m_SkyDome = 0;
 	m_Terrain = 0;
 	
-	m_BubbleSkull = 0;
-	m_CentreSkull = 0;
+	//m_BubbleSkull = 0;
+	//m_CentreSkull = 0;
 	m_WindowPane = 0;
 	
 	m_RenderTexture = 0;
 	
+	m_objectiveCompleteAudio = 0;
 	m_backgroundMusic = 0;
 	m_footPrintAudio = 0;
 	m_damageAudio = 0;
@@ -28,6 +29,7 @@ ZoneClass::ZoneClass()
 
 	m_objectiveModel = 0;
 	m_fireBatModel = 0;
+	m_reflectionTexture = 0;
 
 	m_lastFramePosition = 0;
 
@@ -52,15 +54,13 @@ ZoneClass::~ZoneClass()
 bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int screenHeight, float screenDepth)
 {
 	bool result;
-	//TODO: Fix the last frame position stuff.
-	//TODO: Initialize all the spawners.
 	m_batZone = new CuboidZone;
-	m_batZone->leftBound = 0;
-	m_batZone->rightBound = 500;
-	m_batZone->backBound = 500;
-	m_batZone->frontBound = 0;
-	m_batZone->lowerBound = 20;
-	m_batZone->upperBound = 50;
+	m_batZone->leftBound = 256;
+	m_batZone->rightBound = 768;
+	m_batZone->backBound = 768;
+	m_batZone->frontBound = 256;
+	m_batZone->lowerBound = 75;
+	m_batZone->upperBound = 100;
 
 	m_bulletModel = new ModelClass;
 	result = m_bulletModel->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(),
@@ -78,6 +78,14 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		return false;
 	}
 	
+	m_objectiveModel = new ModelClass;
+	result = m_objectiveModel->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(),
+		"../Project/data/models/Sphere.txt", "../Project/data/textures/glass01.dds", "../Project/data/textures/glass01.dds");
+	if (!result)
+	{
+		return false;
+	}
+
 	m_northBatSpawner = new BatSpawner;
 	result = m_northBatSpawner->InitializeWithModel(m_glassCannonModel);
 	if (!result)
@@ -85,7 +93,13 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		return false;
 	}
 	m_northBatSpawner->setPosition(m_northSpawnerLocation);
+	m_northBatSpawner->setRotation(0, XM_PI, 0);
+	m_northBatSpawner->m_xSize = m_cannonSize.x;
+	m_northBatSpawner->m_ySize = m_cannonSize.y;
+	m_northBatSpawner->m_zSize = m_cannonSize.z;
+	m_northBatSpawner->calculateBoundingBox();
 	m_spawners.push_back(m_northBatSpawner);
+	m_collidables.push_back(m_northBatSpawner);
 
 	m_westBatSpawner = new BatSpawner;
 	result = m_westBatSpawner->InitializeWithModel(m_glassCannonModel);
@@ -94,7 +108,13 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		return false;
 	}
 	m_westBatSpawner->setPosition(m_westSpawnerLocation);
+	m_westBatSpawner->setRotation(0, XM_PIDIV2, 0);
+	m_westBatSpawner->m_xSize = m_cannonSizePerp.x;
+	m_westBatSpawner->m_ySize = m_cannonSizePerp.y;
+	m_westBatSpawner->m_zSize = m_cannonSizePerp.z;
+	m_westBatSpawner->calculateBoundingBox();
 	m_spawners.push_back(m_westBatSpawner);
+	m_collidables.push_back(m_westBatSpawner);
 
 	m_eastBatSpawner = new BatSpawner;
 	result = m_eastBatSpawner->InitializeWithModel(m_glassCannonModel);
@@ -103,7 +123,13 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		return false;
 	}
 	m_eastBatSpawner->setPosition(m_eastSpawnerLocation);
+	m_eastBatSpawner->setRotation(0, XM_PIDIV2 * 3, 0);
+	m_eastBatSpawner->m_xSize = m_cannonSizePerp.x;
+	m_eastBatSpawner->m_ySize = m_cannonSizePerp.y;
+	m_eastBatSpawner->m_zSize = m_cannonSizePerp.z;
+	m_eastBatSpawner->calculateBoundingBox();
 	m_spawners.push_back(m_eastBatSpawner);
+	m_collidables.push_back(m_eastBatSpawner);
 
 	m_southBatSpawner = new BatSpawner;
 	result = m_southBatSpawner->InitializeWithModel(m_glassCannonModel);
@@ -112,7 +138,13 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		return false;
 	}
 	m_southBatSpawner->setPosition(m_southSpawnerLocation);
+	m_southBatSpawner->setRotation(0, 0, 0);
+	m_southBatSpawner->m_xSize = m_cannonSize.x;
+	m_southBatSpawner->m_ySize = m_cannonSize.y;
+	m_southBatSpawner->m_zSize = m_cannonSize.z;
+	m_southBatSpawner->calculateBoundingBox();
 	m_spawners.push_back(m_southBatSpawner);
+	m_collidables.push_back(m_southBatSpawner);
 
 	m_lastFramePosition = new XMFLOAT3;
 	if (!m_lastFramePosition)
@@ -212,20 +244,33 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 	}
 
 	// Create the centre skull object.
-	m_CentreSkull = new FireModelClass;
-	if (!m_CentreSkull)
-	{
-		return false;
-	}
-	m_CentreSkull->position = XMFLOAT3(800, 10, 600);
+	//m_CentreSkull = new FireModelClass;
+	//if (!m_CentreSkull)
+	//{
+	//	return false;
+	//}
+	//m_CentreSkull->position = XMFLOAT3(800, 10, 600);
 
 	// Initialize the flaming head object.
-	result = m_CentreSkull->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/new-ninjaHead.txt",
-		"../Project/data/textures/fire01.dds", "../Project/data/textures/noise01.dds", "../Project/data/textures/alpha01.dds");
+
+	//result = m_CentreSkull->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/models/new-ninjaHead.txt",
+	//	"../Project/data/textures/fire01.dds", "../Project/data/textures/noise01.dds", "../Project/data/textures/alpha01.dds");
 
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the flame skull object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_reflectionTexture = new TextureClass;
+	if (!m_reflectionTexture)
+	{
+		return false;
+	}
+	result = m_reflectionTexture->Initialize(Direct3D->GetDevice(), Direct3D->GetDeviceContext(), "../Project/data/textures/BreithornPanoramaResizedAndStretched.dds");
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the reflection texture.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -291,17 +336,22 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 		MessageBox(hwnd, L"Could not initialize the glass object.", L"Error", MB_OK);
 		return false;
 	}
+	m_WindowPane->m_xSize = m_windowSize.x;
+	m_WindowPane->m_ySize = m_windowSize.y;
+	m_WindowPane->m_zSize = m_windowSize.z;
+	m_WindowPane->calculateBoundingBox();
 	m_collidables.push_back(m_WindowPane);
 	m_WindowPane->setPosition(250, 5, 10);
 
 	m_backgroundMusic = new SoundClass;
-	result = m_backgroundMusic->Initialize(hwnd, "../Project/data/sounds/Snowy_Footstep_2.wav", true);
+	result = m_backgroundMusic->Initialize(hwnd, "../Project/data/sounds/DoNotChillWavVersion.wav", true);
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the background music object.", L"Error", MB_OK);
-		return false;
+		return false;//lasts 175
 	}
 	m_backgroundMusic->repeating = true;
+	m_backgroundMusic->playFor(175);
 
 	m_footPrintAudio = new SoundClass;
 	result = m_footPrintAudio->Initialize(hwnd, "../Project/data/sounds/Snowy_Footstep_2.wav", false);
@@ -333,6 +383,14 @@ bool ZoneClass::Initialize(D3DClass* Direct3D, HWND hwnd, int screenWidth, int s
 	if (!result)
 	{
 		MessageBox(hwnd, L"Could not initialize the bat dying sound object.", L"Error", MB_OK);
+		return false;
+	}
+
+	m_objectiveCompleteAudio = new SoundClass;
+	result = m_objectiveCompleteAudio->Initialize(hwnd, "../Project/data/sounds/Sparkle_Sound_Effect.wav", false);
+	if (!result)
+	{
+		MessageBox(hwnd, L"Could not initialize the objective completion sound object.", L"Error", MB_OK);
 		return false;
 	}
 
@@ -421,12 +479,12 @@ void ZoneClass::Shutdown()
 		m_UserInterface = 0;
 	}
 
-	if (m_CentreSkull)
-	{
-		m_CentreSkull->Shutdown();
-		delete m_CentreSkull;
-		m_CentreSkull = 0;
-	}
+	//if (m_CentreSkull)
+	//{
+	//	m_CentreSkull->Shutdown();
+	//	delete m_CentreSkull;
+	//	m_CentreSkull = 0;
+	//}
 
 	//if (m_BubbleSkull)
 	//{
@@ -456,53 +514,96 @@ void ZoneClass::Shutdown()
 	return;
 }
 
-//bool ZoneClass::RenderToTexture(float rotation)
-//{
-//	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
-//	bool result;
-//
-//
-//	// Set the render target to be the render to texture.
-//	m_RenderTexture->SetRenderTarget(Direct3D->GetDeviceContext(), Direct3D->GetDepthStencilView());
-//
-//	// Clear the render to texture.
-//	m_RenderTexture->ClearRenderTarget(Direct3D->GetDeviceContext(), Direct3D->GetDepthStencilView(), 0.0f, 0.0f, 0.0f, 1.0f);
-//
-//	// Generate the view matrix based on the camera's position.
-//	m_Camera->Render();
-//
-//	// Get the world, view, and projection matrices from the camera and d3d objects.
-//	Direct3D->GetWorldMatrix(worldMatrix);
-//	m_Camera->GetViewMatrix(viewMatrix);
-//	Direct3D->GetProjectionMatrix(projectionMatrix);
-//
-//	// Multiply the world matrix by the rotation.
-//	D3DXMatrixRotationY(&worldMatrix, rotation);
-//
-//	// Put the cube model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-//	m_Model->Render(Direct3D->GetDeviceContext());
-//
-//	// Render the cube model using the texture shader.
-//	result = m_TextureShader->Render(m_D3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_Model->GetTexture());
-//	if (!result)
-//	{
-//		return false;
-//	}
-//
-//	// Reset the render target back to the original back buffer and not the render to texture anymore.
-//	m_D3D->SetBackBufferRenderTarget();
-//
-//	return true;
-//}
+bool ZoneClass::RenderToTexture(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, float rotation, TextureManagerClass* TextureManager)
+{
+	XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
+	bool result;
+
+	// Set the render target to be the render to texture.
+	m_RenderTexture->SetRenderTarget(Direct3D->GetDeviceContext(), Direct3D->GetDepthStencilView());
+
+	// Clear the render to texture.
+	
+	m_RenderTexture->ClearRenderTarget(Direct3D->GetDeviceContext(), Direct3D->GetDepthStencilView(), 0.0f, 0.0f, 0.0f, 1.0f);
+
+	// Generate the view matrix based on the camera's position.
+	m_Camera->Render();
+
+	// Get the world, view, and projection matrices from the camera and d3d objects.
+	Direct3D->GetWorldMatrix(worldMatrix);
+	m_Camera->GetViewMatrix(viewMatrix);
+	Direct3D->GetProjectionMatrix(projectionMatrix);
+
+	// Multiply the world matrix by the rotation.
+
+	XMMatrixRotationY(rotation);
+	//D3DXMatrixRotationY(&worldMatrix, rotation);
+
+	// Put everything on the graphics pipeline to prepare them for drawing.
+	for (int i = 0; i < m_Terrain->GetCellCount(); i++)
+	{
+		// Render each terrain cell if it is visible only.
+		result = m_Terrain->RenderCell(Direct3D->GetDeviceContext(), i, m_Frustum);
+		if (result)
+		{
+			// Render the cell buffers using the hgih quality terrain shader.
+			result = ShaderManager->RenderTerrainShader(Direct3D->GetDeviceContext(), m_Terrain->GetCellIndexCount(i), worldMatrix, viewMatrix,
+				projectionMatrix, TextureManager->GetTexture(0), TextureManager->GetTexture(1),
+				TextureManager->GetTexture(2), TextureManager->GetTexture(3),
+				m_Light->GetDirection(), m_Light->GetDiffuseColor());
+			if (!result)
+			{
+				return false;
+			}
+
+			// If needed then render the bounding box around this terrain cell using the color shader. 
+			if (m_cellLines)
+			{
+				m_Terrain->RenderCellLines(Direct3D->GetDeviceContext(), i);
+				ShaderManager->RenderColorShader(Direct3D->GetDeviceContext(), m_Terrain->GetCellLinesIndexCount(i), worldMatrix,
+					viewMatrix, projectionMatrix);
+				if (!result)
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	// Render the sky dome using the sky dome shader.
+	m_SkyDome->Render(Direct3D->GetDeviceContext());
+	result = ShaderManager->RenderSkyDomeShader(Direct3D->GetDeviceContext(), m_SkyDome->GetIndexCount(), worldMatrix, viewMatrix,
+		projectionMatrix, m_SkyDome->GetApexColor(), m_SkyDome->GetCenterColor());
+	if (!result)
+	{
+		return false;
+	}
+
+	// Render the cube model using the texture shader.
+	//result = m_TextureShader->Render(Direct3D->GetDeviceContext(), m_Model->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_Model->GetTexture());
+	//if (!result)
+	//{
+	//	return false;
+	//}
+
+	// Reset the render target back to the original back buffer and not the render to texture anymore.
+	Direct3D->SetBackBufferRenderTarget();
+
+	return true;
+}
 
 bool ZoneClass::Frame(D3DClass* Direct3D, InputClass* Input, ShaderManagerClass* ShaderManager, TextureManagerClass* TextureManager, 
 					  float frameTime, int fps)
 {
+	if (m_health < 1)
+		return false;
+
 	bool result, foundHeight;
 	float posX, posY, posZ, rotX, rotY, rotZ, height;
 
 	// Do the frame input processing.
 	HandleMovementInput(Input, frameTime, Direct3D);
+
 
 	// Get the view point position/rotation.
 	m_Position->GetPosition(posX, posY, posZ);
@@ -515,57 +616,75 @@ bool ZoneClass::Frame(D3DClass* Direct3D, InputClass* Input, ShaderManagerClass*
 	m_damageAudio->tick(frameTime);
 	m_batKilledAudio->tick(frameTime);
 	m_shootingAudio->tick(frameTime);
+	m_objectiveCompleteAudio->tick(frameTime);
 	m_totalTime += frameTime;
+	deleteThings();
+	tickTimeOfDay(frameTime);
 
-	//TODO: Check the angle is not too steep.
-	if (getAngleMovement() > m_angleTolerance)
-		pushBackPlayer();
-	//TODO: Move the enemies.
 	for each (Bat* b in m_enemies)
 	{
 		b->move(frameTime);
+		b->calculateBoundingBox();
+
+		//Check collision with player.
+		b->checkCollisionPoint(&positionAsVec, this);
+
+		//Check collision with the ground.
+		if (isUnderground(b->getBoundingBox()))
+			b->pushToPreviousPosition();
+
+		//Check collision with other bats
+		for each (Bat* other in m_enemies)
+		{
+			if (b != other)
+			{
+				b->checkColliisonAABB(other->getBoundingBox(), this);
+			}
+		}
+
+		//Check collisions with the bullets.
 		for each (BulletClass* bc in m_projectiles)
 		{
 			b->checkColliisonWithBullet(bc->getPosition(), this);
 		}
+
+		//Now it's previous position can be updated.
+		b->updatePrevPosition();
 	}
-	//Check Collisions between objects and the player
-	for each (Collidable* c in m_collidables)
-	{
-		c->checkCollisionPoint(&positionAsVec, this);
-	}
+
 	//Check collisions between objects and the floor
 	for each (Collidable* i in m_collidables)
 	{
+		i->checkCollisionPoint(&positionAsVec, this);
 		for each (Collidable * j in m_collidables)
 		{
 			i->checkColliisonAABB(j->getBoundingBox(), this);
 		}
 	}
 	//Check colliisons for the bullets.
-
-	//for each (BulletClass * b in m_projectiles)
-	//{
-	//	for each (Collidable * j in m_collidables)
-	//	{
-	//		j->checkCollisionWithBullet(b->getPosition(), this);
-	//		m_projectiles.remove(b);
-	//	}
-	//	if (b)
-	//	{
-	//		if (isUnderground(b->getPosition()))
-	//		{
-	//			m_projectiles.remove(b);
-	//		}
-	//	}
-	//}
-
-	//TODO: Move the bullets.
-	for each (BulletClass* b in m_projectiles)
+	for each (BulletClass * b in m_projectiles)
 	{
 		b->move(frameTime);
+
+		for each (Collidable * j in m_collidables)
+		{
+			if (j->checkCollisionWithBullet(b->getPosition(), this))
+				m_bulletsToDelete.push_back(b);
+		}
+		if (b)
+		{
+			if (isUnderground(b->getPosition()))
+			{
+				m_bulletsToDelete.push_back(b);
+			}
+		}
 	}
-	//TODO: Tick firing
+	//Check colliisons for the objectives
+	for each (ObjectiveClass* o in m_objectives)
+	{
+		o->calculateBoundingBox();
+		o->checkCollisionPoint(&positionAsVec, this);
+	}
 	tickFiring(frameTime);
 	//TODO: Set up previous frame's position.
 	//TODO: Tick the bat spawners
@@ -598,15 +717,30 @@ bool ZoneClass::Frame(D3DClass* Direct3D, InputClass* Input, ShaderManagerClass*
 		}
 	}
 
+	if ((outOfBounds(&positionAsVec) || getAngleMovement() > m_angleTolerance) && !m_firstFrame)
+		pushBackPlayer();
+	else
+	{
+		m_lastFramePosition->x = posX;
+		m_lastFramePosition->y = posY;
+		m_lastFramePosition->z = posZ;
+	}
+	if (m_firstFrame)
+	{
+		m_lastFramePosition->x = posX;
+		m_lastFramePosition->y = posY;
+		m_lastFramePosition->z = posZ;
+		spawnObjectives(5);
+		m_firstFrame = false;
+	}
+
 	// Render the graphics.
+	m_Camera->RenderReflection(posY);
 	result = Render(Direct3D, ShaderManager, TextureManager);
 	if(!result)
 	{
 		return false;
 	}
-	m_lastFramePosition->x = posX;
-	m_lastFramePosition->y = posY;
-	m_lastFramePosition->z = posZ;
 
 	return true;
 }
@@ -615,23 +749,34 @@ void ZoneClass::batHit(Bat* b)
 {
 	m_batKilledAudio->playFor(1);
 	incrementScore(1);
-	m_enemies.remove(b);
+	m_enemiesToDelete.push_back(b);
+	//__debugbreak();
+	//m_enemies.remove(b);
+	//__debugbreak();
 }
 
 void ZoneClass::playerHit(Bat* b)
 {
-	m_enemies.remove(b);
+	//__debugbreak();
+	//m_enemies.remove(b);
+	//__debugbreak();
+	m_damageAudio->playFor(1);
+	m_enemiesToDelete.push_back(b);
 	m_health -= 1;
 }
 
 void ZoneClass::pushBackPlayer()
 {
 	m_Position->SetPosition(m_lastFramePosition->x, m_lastFramePosition->y, m_lastFramePosition->z);
+	m_Position->resetXVelocity();
+	m_Position->resetYVelocity();
+	m_Position->resetZVelocity();
 }
 
 void ZoneClass::objectiveCollected(ObjectiveClass* o)
 {
-	m_objectives.remove(o);
+	m_objectiveCompleteAudio->playFor(1.5f);
+	m_objectivesToDelete.push_back(o);
 	incrementScore(1);
 	if (m_objectives.size() < 1)
 	{
@@ -930,6 +1075,7 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 	m_WindowPane->Render(Direct3D->GetDeviceContext());
 	result = ShaderManager->RenderGlassShader(Direct3D->GetDeviceContext(), m_WindowPane->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_WindowPane->GetTexture(),
 		m_WindowPane->GetNormalMap(), m_RenderTexture->GetShaderResourceView(), m_WindowPane->m_refractionScale);
+	//
 	//result = ShaderManager->RenderTextureShader(Direct3D->GetDeviceContext(), m_WindowPane->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix, m_WindowPane->GetTexture());
 	if (!result)
 	{
@@ -943,7 +1089,7 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 		XMFLOAT3* rotationMatrix = b->getRotation();
 		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationX((rotationMatrix->x * XM_PI / 180) + XM_PIDIV2));
 		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationY(rotationMatrix->y * XM_PI / 180));
-		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixScaling(m_bulletSizeCorrection, m_bulletSizeCorrection, m_bulletSizeCorrection));
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixScaling(m_bulletScale, m_bulletScale, m_bulletScale));
 		worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
 		//Probably going to need to apply scaling.
 		b->Render(Direct3D->GetDeviceContext());
@@ -957,25 +1103,22 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 
 	Direct3D->GetWorldMatrix(worldMatrix);
 
-	for each (BatSpawner* bs in m_spawners)
+	for each (ObjectiveClass* o in m_objectives)
 	{
-		translationMatrix = XMMatrixTranslation(bs->getPosition()->x, bs->getPosition()->y, bs->getPosition()->z);
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixScaling(m_objectiveScale, m_objectiveScale, m_objectiveScale));
+		translationMatrix = XMMatrixTranslation(o->getPosition()->x, o->getPosition()->y, o->getPosition()->z);
 		worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
-		//Probably going to need to apply scaling.
-		bs->Render(Direct3D->GetDeviceContext());
-		result = ShaderManager->RenderLightShader(Direct3D->GetDeviceContext(), bs->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-			m_WindowPane->GetTexture(), m_Light->GetDirection(), m_Light->GetDiffuseColor());
-		if (!result)
-		{
-			return false;
-		}
+		o->getModel()->Render(Direct3D->GetDeviceContext());
+		result = ShaderManager->RenderReflectionShader(Direct3D->GetDeviceContext(), o->getModel()->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+			o->getModel()->GetTexture(), m_reflectionTexture->GetTexture(), m_Camera->GetReflectionViewMatrix());
 		Direct3D->GetWorldMatrix(worldMatrix);
 	}
 
 	for each (Bat* b in m_enemies)
 	{
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixScaling(m_batScale, m_batScale, m_batScale));
 		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationX(b->getRotation()->x));
-		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationY(b->getRotation()->y));
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationY(-(b->getRotation()->y + XM_PIDIV2)));
 		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixRotationZ(b->getRotation()->z));
 		translationMatrix = XMMatrixTranslation(b->getPosition()->x, b->getPosition()->y, b->getPosition()->z);
 		worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
@@ -1024,17 +1167,18 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 	}
 	
 	// Reset the world matrix.
-	Direct3D->GetWorldMatrix(worldMatrix);
-	translationMatrix = XMMatrixTranslation(m_CentreSkull->position.x, m_CentreSkull->position.y, m_CentreSkull->position.z);
-	worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
-	m_CentreSkull->Render(Direct3D->GetDeviceContext());
-	result = ShaderManager->RenderFireShader(Direct3D->GetDeviceContext(), m_CentreSkull->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
-		m_CentreSkull->GetTexture1(), m_CentreSkull->GetTexture2(), m_CentreSkull->GetTexture3(), frameTime, scrollSpeeds,
-		scales, distortion1, distortion2, distortion3, distortionScale, distortionBias);
-	if (!result)
-	{
-		return false;
-	}
+
+	//Direct3D->GetWorldMatrix(worldMatrix);
+	//translationMatrix = XMMatrixTranslation(m_CentreSkull->position.x, m_CentreSkull->position.y, m_CentreSkull->position.z);
+	//worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
+	//m_CentreSkull->Render(Direct3D->GetDeviceContext());
+	//result = ShaderManager->RenderFireShader(Direct3D->GetDeviceContext(), m_CentreSkull->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+	//	m_CentreSkull->GetTexture1(), m_CentreSkull->GetTexture2(), m_CentreSkull->GetTexture3(), frameTime, scrollSpeeds,
+	//	scales, distortion1, distortion2, distortion3, distortionScale, distortionBias);
+	//if (!result)
+	//{
+	//	return false;
+	//}
 
 	//// Reset the world matrix.
 	//Direct3D->GetWorldMatrix(worldMatrix);
@@ -1050,6 +1194,29 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 
 	// Reset the world matrix.
 	Direct3D->GetWorldMatrix(worldMatrix);
+
+	// Render the scene to texture first.
+	result = RenderToTexture(Direct3D, ShaderManager, yawRadians, TextureManager);
+	if (!result)
+	{
+		return false;
+	}
+	for each (BatSpawner * bs in m_spawners)
+	{
+		worldMatrix = XMMatrixMultiply(worldMatrix, XMMatrixScaling(m_cannonScale, m_cannonScale, m_cannonScale));
+		translationMatrix = XMMatrixTranslation(bs->getPosition()->x, bs->getPosition()->y, bs->getPosition()->z);
+		worldMatrix = XMMatrixMultiply(worldMatrix, translationMatrix);
+		//Probably going to need to apply scaling.
+		bs->Render(Direct3D->GetDeviceContext());
+		result = ShaderManager->RenderGlassShader(Direct3D->GetDeviceContext(), bs->GetIndexCount(), worldMatrix, viewMatrix, projectionMatrix,
+			bs->getModel()->GetTexture(), bs->getModel()->GetNormalMap(), m_RenderTexture->GetShaderResourceView(), bs->getModel()->m_refractionScale);
+		//bs->getModel()->GetTexture(), bs->getModel()->GetNormalMap(), m_reflectionTexture->GetTexture(), bs->getModel()->m_refractionScale);
+		if (!result)
+		{
+			return false;
+		}
+		Direct3D->GetWorldMatrix(worldMatrix);
+	}
 
 	// Turn off wire frame rendering of the terrain if it was on.
 	if(m_wireFrame)
@@ -1076,6 +1243,7 @@ bool ZoneClass::Render(D3DClass* Direct3D, ShaderManagerClass* ShaderManager, Te
 	}
 
 	// Present the rendered scene to the screen.
+
 	Direct3D->EndScene();
 
 	return true;
@@ -1087,6 +1255,16 @@ bool ZoneClass::isUnderground(XMFLOAT3* point)
 	m_Terrain->GetHeightAtPosition(point->x, point->z, yCoord);
 	if (point->y < yCoord)
 		return true;
+	return false;
+}
+
+bool ZoneClass::isUnderground(BoundingBox* box)
+{
+	for each (XMFLOAT3 vert in box->verts())
+	{
+		if (isUnderground(&vert))
+			return true;
+	}
 	return false;
 }
 
@@ -1118,7 +1296,7 @@ void ZoneClass::adjustZoom(float frameTime)
 
 void ZoneClass::fire(ID3D11Device* device, ID3D11DeviceContext* context)
 {
-	if (m_ammo > 0 && m_timeSinceLastShot >= m_timeBetweenShots)
+	if (m_ammo > 0 && m_shotCooldown <= 0)
 	{
 		m_ammo -= 1;
 		//Fire a new projectile, add it to the list of projectiles.
@@ -1130,7 +1308,7 @@ void ZoneClass::fire(ID3D11Device* device, ID3D11DeviceContext* context)
 		newBullet->InitializeWithModel(m_bulletModel, &positionAsVector, &rotationAsVector, m_shotPower);
 		m_projectiles.push_back(newBullet);
 		m_shootingAudio->playFor(1);
-		m_timeSinceLastShot = m_timeBetweenShots;
+		m_shotCooldown = m_timeBetweenShots;
 	}
 }
 
@@ -1141,6 +1319,8 @@ void ZoneClass::checkAllCollisions()
 
 void ZoneClass::spawnObjectives(int amountToSpawn)
 {
+	for (int i = 0; i < amountToSpawn; i++)
+		spawnNewObjective();
 }
 
 void ZoneClass::incrementScore(int score)
@@ -1162,9 +1342,37 @@ void ZoneClass::tickBatSpawners(D3DClass* Direct3D, float timePassed)
 	}
 }
 
-void ZoneClass::spawnNewObjectives(int numberToSpawn)
+void ZoneClass::spawnNewObjective()
 {
+	float xCoord;
+	float zCoord;
+	float yCoord;
+
+	//Select random coordinates that are inside the zone of acceptable coordinates.
+	random_device rd1;
+	default_random_engine generator1(rd1());
+	uniform_real_distribution<float> distributionX(50, 974);
+	xCoord = distributionX(generator1);
+	random_device rd2;
+	default_random_engine generator2(rd2());
+	uniform_real_distribution<float> distributionZ(50, 974);
+	zCoord = distributionZ(generator2);
+
 	//RNG the X and Z coordinates, find the y
+	m_Terrain->GetHeightAtPosition(xCoord, zCoord, yCoord);
+	//m_Terrain->GetHeightAtPosition(500, 140, yCoord);
+
+	ObjectiveClass* newObjective = new ObjectiveClass;
+	
+	XMFLOAT3* coords = new XMFLOAT3(xCoord, m_objectiveFloat + yCoord, zCoord);
+	//XMFLOAT3* coords = new XMFLOAT3(500, yCoord + m_objectiveFloat, 140);
+
+	newObjective->initializeWithModel(m_objectiveModel, coords);
+	newObjective->m_xSize = m_objectiveSize.x;
+	newObjective->m_ySize = m_objectiveSize.y;
+	newObjective->m_zSize = m_objectiveSize.z;
+
+	m_objectives.push_back(newObjective);
 }
 
 bool ZoneClass::spawnBats(int amountToSpawn)
@@ -1186,11 +1394,24 @@ bool ZoneClass::spawnBats(int amountToSpawn)
 			BatSpawner* spawnerPtr = *batSpawnIter;
 			newBat = spawnerPtr->spawnBatWithModel(m_fireBatModel, this, m_batZone);
 		}
+		newBat->m_xSize = m_batSize.x;
+		newBat->m_ySize = m_batSize.y;
+		newBat->m_zSize = m_batSize.z;
 		m_enemies.push_back(newBat);
+		m_lastSpawnerUsed++;
 	}
 	if (!newBat)
 		return false;
 	return result;
+}
+
+bool ZoneClass::outOfBounds(XMFLOAT3* coord)
+{
+	if (coord->x <= 0 || coord->x >= 1000)
+		return true;
+	if (coord->z <= 0 || coord->z >= 1000)
+		return true;
+	return false;
 }
 
 float ZoneClass::getAngleMovement()
@@ -1199,9 +1420,9 @@ float ZoneClass::getAngleMovement()
 	{
 		float posX, posY, posZ;
 		m_Position->GetPosition(posX, posY, posZ);
-		float diffX = m_lastFramePosition->x - posX;
-		float diffY = m_lastFramePosition->y - posY;
-		float diffZ = m_lastFramePosition->z - posZ;
+		float diffX = posX - m_lastFramePosition->x;
+		float diffY = posY - m_lastFramePosition->y;
+		float diffZ = posZ - m_lastFramePosition->z;
 		float diffXZ = sqrt(pow(diffX, 2) + pow(diffZ, 2));//Pythagorus.
 		return atan(diffY / diffXZ) * 180 / XM_PI;
 	}
@@ -1210,10 +1431,7 @@ float ZoneClass::getAngleMovement()
 
 void ZoneClass::tickFiring(float frameTime)
 {
-	if (m_timeSinceLastShot < m_timeBetweenShots)
-	{
-		m_timeSinceLastShot += frameTime;
-	}
+	m_shotCooldown -= frameTime;
 	if (m_ammo < m_ammoCap)
 	{
 		m_timeUntilNextAmmoDrop -= frameTime;
@@ -1227,4 +1445,66 @@ void ZoneClass::tickFiring(float frameTime)
 
 void ZoneClass::checkObjectiveWave()
 {
+}
+
+void ZoneClass::deleteThings()
+{
+	for each (BulletClass* b in m_bulletsToDelete)
+	{
+		m_projectiles.remove(b);
+	}
+	m_bulletsToDelete.clear();
+	for each (Bat* b in m_enemiesToDelete)
+	{
+		m_enemies.remove(b);
+	}
+	m_enemiesToDelete.clear();
+	for each (ObjectiveClass* o in m_objectivesToDelete)
+	{
+		m_objectives.remove(o);
+	}
+	m_objectivesToDelete.clear();
+}
+
+void ZoneClass::tickTimeOfDay(float frameTime)
+{
+	if (m_timeGoingUp)
+		m_timeOfDay += frameTime;
+	else
+		m_timeOfDay -= frameTime;
+
+	if (m_timeOfDay > m_dayCycleTime)
+	{
+		m_timeOfDay = m_dayCycleTime;
+		m_timeGoingUp = false;
+	}
+	if (0 > m_timeOfDay)
+	{
+		m_timeOfDay = 0;
+		m_timeGoingUp = true;
+	}
+
+	float portionThroughDay = m_timeOfDay / m_dayCycleTime;
+
+	float r = portionThroughDay * (m_apexDayColour.x - m_apexNightColour.x) + m_apexNightColour.x;
+	float g = portionThroughDay * (m_apexDayColour.y - m_apexNightColour.y) + m_apexNightColour.y;
+	float b = portionThroughDay * (m_apexDayColour.z - m_apexNightColour.z) + m_apexNightColour.z;
+	//float a = portionThroughDay * (m_apexDayColour.w - m_apexNightColour.w) + m_apexNightColour.w;
+	XMFLOAT4 colour = { r, g, b, 1 };
+
+	m_SkyDome->SetApexColour(colour);
+
+	r = portionThroughDay * (m_centreDayColour.x - m_centreNightColour.x) + m_centreNightColour.x;
+	g = portionThroughDay * (m_centreDayColour.y - m_centreNightColour.y) + m_centreNightColour.y;
+	b = portionThroughDay * (m_centreDayColour.z - m_centreNightColour.z) + m_centreNightColour.z;
+	//a = portionThroughDay * (m_centreDayColour.w - m_centreNightColour.w) + m_centreNightColour.w;
+	colour = { r, g, b, 1 };
+
+	m_SkyDome->SetApexColour(colour);
+
+	r = portionThroughDay * (m_dayLightColour.x - m_nightLightColour.x) + m_nightLightColour.x;
+	g = portionThroughDay * (m_dayLightColour.y - m_nightLightColour.y) + m_nightLightColour.y;
+	b = portionThroughDay * (m_dayLightColour.z - m_nightLightColour.z) + m_nightLightColour.z;
+
+	m_Light->SetDiffuseColor(r, g, b, 1);
 }
